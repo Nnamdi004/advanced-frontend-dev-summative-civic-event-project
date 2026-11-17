@@ -1,5 +1,6 @@
 const API_BASE_URL = "http://localhost:4000";
 const SESSION_KEY = "civicEventsSession";
+const EVENTS_PER_PAGE = 6;
 
 const authState = {
   token: null,
@@ -8,6 +9,12 @@ const authState = {
 
 let toastTimer;
 let sessionCheckInProgress = false;
+let events = [];
+let registrations = [];
+let eventsLoaded = false;
+let registrationsLoaded = false;
+let currentEventsPage = 1;
+let currentRoute = "login";
 
 function readSession() {
   try {
@@ -64,6 +71,9 @@ function apiRequest(path, options = {}) {
     if (response.status === 401 && options.auth !== false) {
       clearSession();
       showView("login");
+      $("#auth-main").prop("hidden", false);
+      $("#app-main, #app-nav").prop("hidden", true);
+      $("#header-note").prop("hidden", false);
       showToast("Your session has expired. Please sign in again.", true);
     }
 
@@ -112,13 +122,398 @@ function showFormError(selector, message) {
   $(selector).text(message).prop("hidden", false);
 }
 
+function isAdmin() {
+  return authState.user && authState.user.role === "admin";
+}
+
+function escapePathSegment(value) {
+  return encodeURIComponent(String(value));
+}
+
+function eventDateTime(dateValue) {
+  if (!dateValue) return "Date to be announced";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "Date to be announced";
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function eventDateRange(event) {
+  const start = eventDateTime(event.starts_at);
+  const endDate = event.ends_at ? new Date(event.ends_at) : null;
+  const startDate = event.starts_at ? new Date(event.starts_at) : null;
+  if (!endDate || Number.isNaN(endDate.getTime())) return start;
+
+  const endTime = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(endDate);
+  if (startDate && startDate.toDateString() === endDate.toDateString()) {
+    return `${start} – ${endTime}`;
+  }
+  return `${start} – ${eventDateTime(event.ends_at)}`;
+}
+
+function safeMediaUrl(url) {
+  if (!url || typeof url !== "string") return "";
+  try {
+    const parsedUrl = new URL(url, API_BASE_URL);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:" ? parsedUrl.href : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function isRegistered(eventId) {
+  return registrations.some((registration) =>
+    registration.event_id === eventId && registration.status === "registered"
+  );
+}
+
+function hasCancelledRegistration(eventId) {
+  return registrations.some((registration) =>
+    registration.event_id === eventId && registration.status === "cancelled"
+  );
+}
+
+function eventActionButton(eventId) {
+  const $button = $("<button>").addClass("registration-button").attr("data-event-action", "");
+  $button.attr("data-event-id", eventId);
+  if (isRegistered(eventId)) {
+    return $button.addClass("cancel-registration").attr("data-event-action", "cancel").text("Cancel registration");
+  }
+  if (hasCancelledRegistration(eventId)) {
+    return $button.addClass("cancelled-registration").prop("disabled", true).text("Registration canceled");
+  }
+  return $button.addClass("register-event").attr("data-event-action", "register").text("Register");
+}
+
+function makeEventCard(event, registration = null) {
+  const eventId = registration ? registration.event_id : event.id;
+  const $card = $("<article>").addClass("event-card");
+  const imageUrl = safeMediaUrl(event.metadata && event.metadata.image_url);
+
+  if (imageUrl) {
+    $("<img>").addClass("event-card-image").attr({
+      src: imageUrl,
+      alt: "",
+      loading: "lazy",
+    }).appendTo($card);
+  } else {
+    $("<div>").addClass("event-card-placeholder").attr("aria-hidden", "true")
+      .append($("<span>").text("C+")).appendTo($card);
+  }
+
+  const $body = $("<div>").addClass("event-card-body").appendTo($card);
+  const $meta = $("<div>").addClass("event-card-meta").appendTo($body);
+  $("<span>").addClass("event-date-label").text(eventDateTime(event.starts_at)).appendTo($meta);
+  if (registration && registration.status === "cancelled") {
+    $("<span>").addClass("status-pill cancelled-pill").text("Canceled").appendTo($meta);
+  } else if (registration && registration.status === "registered") {
+    $("<span>").addClass("status-pill registered-pill").text("Registered").appendTo($meta);
+  }
+
+  $("<h2>").addClass("event-card-title").text(event.title || "Community event").appendTo($body);
+  $("<p>").addClass("event-card-description").text(event.description || "Details coming soon.").appendTo($body);
+
+  const $location = $("<p>").addClass("event-card-location");
+  $("<span>").attr("aria-hidden", "true").text("⌖").appendTo($location);
+  $location.append(document.createTextNode(` ${event.location || "Location to be announced"}`)).appendTo($body);
+  $("<a>").addClass("event-view-link").attr("href", `#event/${escapePathSegment(eventId)}`)
+    .text("View details").appendTo($body);
+
+  if (!registration || registration.status === "registered") {
+    eventActionButton(eventId).appendTo($body);
+  }
+  return $card;
+}
+
+function visibleEvents() {
+  const search = $("#event-search").val().trim().toLowerCase();
+  const location = $("#event-location-filter").val().trim().toLowerCase();
+  const startsAfter = $("#event-date-filter").val();
+
+  return events.filter((event) => {
+    if (!isAdmin() && event.published !== true) return false;
+    const searchableText = `${event.title || ""} ${event.description || ""}`.toLowerCase();
+    if (search && !searchableText.includes(search)) return false;
+    if (location && !(event.location || "").toLowerCase().includes(location)) return false;
+    if (startsAfter && event.starts_at && event.starts_at.slice(0, 10) < startsAfter) return false;
+    return true;
+  });
+}
+
+function renderPagination(pageCount) {
+  const $pagination = $("#events-pagination").empty();
+  if (pageCount <= 1) {
+    $pagination.prop("hidden", true);
+    return;
+  }
+
+  $pagination.prop("hidden", false);
+  const $previous = $("<button>").addClass("page-button").text("← Previous")
+    .prop("disabled", currentEventsPage === 1)
+    .on("click", () => changeEventsPage(currentEventsPage - 1));
+  const $next = $("<button>").addClass("page-button").text("Next →")
+    .prop("disabled", currentEventsPage === pageCount)
+    .on("click", () => changeEventsPage(currentEventsPage + 1));
+  const $status = $("<span>").addClass("page-status")
+    .text(`Page ${currentEventsPage} of ${pageCount}`);
+  $pagination.append($previous, $status, $next);
+}
+
+function changeEventsPage(page) {
+  currentEventsPage = page;
+  renderEvents();
+  $("#events-title")[0].scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderEvents() {
+  const filtered = visibleEvents();
+  const pageCount = Math.max(1, Math.ceil(filtered.length / EVENTS_PER_PAGE));
+  currentEventsPage = Math.min(currentEventsPage, pageCount);
+  const start = (currentEventsPage - 1) * EVENTS_PER_PAGE;
+  const pageEvents = filtered.slice(start, start + EVENTS_PER_PAGE);
+  const $grid = $("#events-grid").empty();
+
+  pageEvents.forEach((event) => $grid.append(makeEventCard(event)));
+  $("#events-empty").prop("hidden", filtered.length > 0);
+  $("#events-pagination").prop("hidden", filtered.length === 0);
+  renderPagination(pageCount);
+}
+
+function loadEvents() {
+  $("#events-loading").prop("hidden", false);
+  $("#events-error, #events-empty, #events-pagination").prop("hidden", true);
+  $("#events-grid").empty();
+
+  return Promise.all([
+    apiRequest("/api/events"),
+    apiRequest("/api/event-registrations/my-registrations"),
+  ]).then(([eventResponse, registrationResponse]) => {
+    if (!Array.isArray(eventResponse.data) || !Array.isArray(registrationResponse.data)) {
+      throw new Error("The API returned an unexpected events response.");
+    }
+    events = eventResponse.data;
+    registrations = registrationResponse.data;
+    eventsLoaded = true;
+    registrationsLoaded = true;
+    currentEventsPage = 1;
+    $("#events-loading").prop("hidden", true);
+    renderEvents();
+    updateDashboardSummary();
+  }).catch((error) => {
+    $("#events-loading").prop("hidden", true);
+    if (!authState.token) return;
+    $("#events-error-message").text(error.message);
+    $("#events-error").prop("hidden", false);
+  });
+}
+
+function loadRegistrations() {
+  $("#registrations-loading").prop("hidden", false);
+  $("#registrations-error, #registrations-empty").prop("hidden", true);
+  $("#registrations-grid").empty();
+
+  return apiRequest("/api/event-registrations/my-registrations").then((response) => {
+    if (!Array.isArray(response.data)) {
+      throw new Error("The API returned an unexpected registrations response.");
+    }
+    registrations = response.data;
+    registrationsLoaded = true;
+    const activeRegistrations = registrations.filter((item) => item.status === "registered");
+    const $grid = $("#registrations-grid").empty();
+    activeRegistrations.forEach((registration) => {
+      $grid.append(makeEventCard({
+        id: registration.event_id,
+        title: registration.title,
+        description: "",
+        location: registration.location,
+        starts_at: registration.starts_at,
+        ends_at: registration.ends_at,
+      }, registration));
+    });
+    $("#registrations-loading").prop("hidden", true);
+    $("#registrations-empty").prop("hidden", activeRegistrations.length > 0);
+    updateDashboardSummary();
+  }).catch((error) => {
+    $("#registrations-loading").prop("hidden", true);
+    if (!authState.token) return;
+    $("#registrations-error-message").text(error.message);
+    $("#registrations-error").prop("hidden", false);
+  });
+}
+
+function loadEventDetail(eventId) {
+  currentRoute = "event-detail";
+  $("#event-detail-content, #event-detail-error").prop("hidden", true);
+  $("#event-detail-loading").prop("hidden", false);
+  const registrationRequest = registrationsLoaded
+    ? Promise.resolve()
+    : apiRequest("/api/event-registrations/my-registrations").then((response) => {
+      if (!Array.isArray(response.data)) {
+        throw new Error("The API returned an unexpected registrations response.");
+      }
+      registrations = response.data;
+      registrationsLoaded = true;
+    });
+
+  Promise.all([
+    apiRequest(`/api/events/${escapePathSegment(eventId)}`),
+    registrationRequest,
+  ]).then(([response]) => {
+    const event = response.data;
+    if (!event || !event.id) {
+      throw new Error("This event could not be found.");
+    }
+    if (!isAdmin() && event.published !== true) {
+      throw new Error("This event is not available.");
+    }
+    $("#event-detail-loading").prop("hidden", true);
+    renderEventDetail(event);
+  }).catch((error) => {
+    $("#event-detail-loading").prop("hidden", true);
+    if (!authState.token) return;
+    $("#event-detail-error-message").text(error.message);
+    $("#event-detail-error").prop("hidden", false);
+  });
+}
+
+function renderEventDetail(event) {
+  const $content = $("#event-detail-content").empty();
+  const imageUrl = safeMediaUrl(event.metadata && event.metadata.image_url);
+  if (imageUrl) {
+    $("<img>").addClass("event-detail-image").attr({
+      src: imageUrl,
+      alt: `Image for ${event.title || "this event"}`,
+    }).appendTo($content);
+  }
+
+  const $body = $("<div>").addClass("event-detail-body").appendTo($content);
+  $("<p>").addClass("form-eyebrow").text("COMMUNITY EVENT").appendTo($body);
+  $("<h1>").attr("id", "event-detail-title").addClass("font-display event-detail-title")
+    .text(event.title || "Community event").appendTo($body);
+  const $facts = $("<div>").addClass("event-detail-facts").appendTo($body);
+  $("<p>").text(`Date and time: ${eventDateRange(event)}`).appendTo($facts);
+  $("<p>").text(`Location: ${event.location || "To be announced"}`).appendTo($facts);
+  if (event.location) {
+    $("<a>").attr({
+      href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`,
+      target: "_blank",
+      rel: "noopener noreferrer",
+    }).addClass("map-link").text("Open map in a new tab ↗").appendTo($facts);
+  }
+  $("<div>").addClass("event-detail-description").text(event.description || "More event details will be shared soon.").appendTo($body);
+  const $actions = $("<div>").addClass("event-detail-actions").appendTo($body);
+  eventActionButton(event.id).appendTo($actions);
+  $("#event-detail-content").prop("hidden", false);
+}
+
+function renderRegistrationsFromCurrentData() {
+  if (currentRoute === "events") renderEvents();
+  if (currentRoute === "event-detail") {
+    const eventId = window.location.hash.slice("#event/".length);
+    loadEventDetail(decodeURIComponent(eventId));
+  }
+  if (currentRoute === "my-registrations") loadRegistrations();
+  updateDashboardSummary();
+}
+
+function changeRegistration(eventId, action, $button) {
+  const isCancel = action === "cancel";
+  $button.prop("disabled", true).text(isCancel ? "Canceling…" : "Registering…");
+  apiRequest(`/api/event-registrations/${isCancel ? "cancel" : "register"}`, {
+    method: "POST",
+    body: { event_id: eventId },
+  }).then((response) => {
+    if (isCancel) {
+      registrations = registrations.map((registration) =>
+        registration.event_id === eventId
+          ? { ...registration, status: "cancelled" }
+          : registration
+      );
+    } else {
+      registrations = registrations.filter((registration) => registration.event_id !== eventId);
+      registrations.push({
+        ...(response.data || {}),
+        event_id: eventId,
+        status: "registered",
+      });
+    }
+    registrationsLoaded = true;
+    showToast(response.message || (isCancel ? "Registration canceled." : "You’re registered for this event."));
+    renderRegistrationsFromCurrentData();
+  }).catch((error) => {
+    $button.prop("disabled", false).text(isCancel ? "Cancel registration" : "Register");
+    showToast(error.message, true);
+  });
+}
+
+function updateDashboardSummary() {
+  const publishedEvents = events.filter((event) => isAdmin() || event.published === true);
+  const activeRegistrations = registrations.filter((registration) => registration.status === "registered");
+  $("#dashboard-event-count").text(eventsLoaded ? publishedEvents.length : "—");
+  $("#dashboard-registration-count").text(registrationsLoaded ? activeRegistrations.length : "—");
+}
+
+function showAppView(route) {
+  $("#auth-main").prop("hidden", true);
+  $("#app-main, #app-nav").prop("hidden", false);
+  $("#header-note").prop("hidden", true);
+  $(".app-view").prop("hidden", true);
+  currentRoute = route;
+
+  const routeView = route === "event-detail" ? "event-detail" : route;
+  $(`#${routeView}-view`).prop("hidden", false);
+  $("#app-nav a").removeClass("active");
+  $(`#app-nav a[data-route="${route === "event-detail" ? "events" : route}"]`).addClass("active");
+
+  if (route === "dashboard") {
+    updateDashboardSummary();
+    if (!eventsLoaded || !registrationsLoaded) {
+      Promise.all([
+        apiRequest("/api/events"),
+        apiRequest("/api/event-registrations/my-registrations"),
+      ]).then(([eventResponse, registrationResponse]) => {
+        events = Array.isArray(eventResponse.data) ? eventResponse.data : [];
+        registrations = Array.isArray(registrationResponse.data) ? registrationResponse.data : [];
+        eventsLoaded = true;
+        registrationsLoaded = true;
+        updateDashboardSummary();
+      }).catch(() => {
+        $("#dashboard-event-count, #dashboard-registration-count").text("—");
+      });
+    }
+  } else if (route === "events") {
+    loadEvents();
+  } else if (route === "my-registrations") {
+    loadRegistrations();
+  }
+}
+
 function renderDashboard() {
   const user = authState.user || {};
   $("#dashboard-name").text(user.full_name || "there");
   $("#dashboard-email").text(user.email || "");
   $("#dashboard-role").text(user.role || "user");
-  showView("dashboard");
-  window.history.replaceState(null, "", "#dashboard");
+  const currentHash = window.location.hash;
+  if (!["#events", "#my-registrations", "#dashboard"].includes(currentHash) && !currentHash.startsWith("#event/")) {
+    window.history.replaceState(null, "", "#dashboard");
+  }
+
+  const route = window.location.hash.slice(1);
+  if (route.startsWith("event/")) {
+    showAppView("event-detail");
+    loadEventDetail(decodeURIComponent(route.slice("event/".length)));
+  } else {
+    showAppView(["events", "my-registrations"].includes(route) ? route : "dashboard");
+  }
 }
 
 function passwordScore(password) {
@@ -150,6 +545,9 @@ function checkRestoredSession() {
   if (!session) {
     authState.token = null;
     authState.user = null;
+    $("#auth-main").prop("hidden", false);
+    $("#app-main, #app-nav").prop("hidden", true);
+    $("#header-note").prop("hidden", false);
     showView(window.location.hash === "#signup" ? "signup" : "login");
     return;
   }
@@ -173,6 +571,9 @@ function checkRestoredSession() {
   }).catch((error) => {
     if (authState.token) {
       clearSession();
+      $("#auth-main").prop("hidden", false);
+      $("#app-main, #app-nav").prop("hidden", true);
+      $("#header-note").prop("hidden", false);
       showView("login");
       showToast(error.message, true);
     }
@@ -256,19 +657,49 @@ $(function () {
     }).finally(() => setFormBusy($form, false));
   });
 
-  $("#logout-button").on("click", () => {
+  $("#events-grid").on("click", "[data-event-action]", function () {
+    changeRegistration($(this).attr("data-event-id"), $(this).attr("data-event-action"), $(this));
+  });
+  $("#event-detail-content").on("click", "[data-event-action]", function () {
+    changeRegistration($(this).attr("data-event-id"), $(this).attr("data-event-action"), $(this));
+  });
+
+  $("#event-search, #event-location-filter, #event-date-filter").on("input change", () => {
+    currentEventsPage = 1;
+    renderEvents();
+  });
+  $("#retry-events").on("click", loadEvents);
+  $("#retry-registrations").on("click", loadRegistrations);
+  $("#nav-logout-button").on("click", () => {
     clearSession();
+    events = [];
+    registrations = [];
+    eventsLoaded = false;
+    registrationsLoaded = false;
+    $("#auth-main").prop("hidden", false);
+    $("#app-main, #app-nav").prop("hidden", true);
+    $("#header-note").prop("hidden", false);
     showView("login");
     $("#login-password").val("").trigger("focus");
     showToast("You have been signed out.");
   });
 
   $(window).on("hashchange", () => {
-    if (authState.token) {
-      renderDashboard();
+    if (!authState.token) {
+      $("#auth-main").prop("hidden", false);
+      $("#app-main, #app-nav").prop("hidden", true);
+      $("#header-note").prop("hidden", false);
+      showView(window.location.hash === "#signup" ? "signup" : "login");
       return;
     }
-    showView(window.location.hash === "#signup" ? "signup" : "login");
+
+    const route = window.location.hash.slice(1);
+    if (route.startsWith("event/")) {
+      showAppView("event-detail");
+      loadEventDetail(decodeURIComponent(route.slice("event/".length)));
+    } else {
+      showAppView(["events", "my-registrations"].includes(route) ? route : "dashboard");
+    }
   });
 
   checkRestoredSession();
