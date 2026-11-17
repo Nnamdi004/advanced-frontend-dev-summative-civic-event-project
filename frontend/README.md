@@ -3,7 +3,8 @@
 The frontend is a static HTML, Tailwind CSS, and jQuery application. It connects
 to the Express API and currently implements signup, login, event discovery,
 event details, registrations, event feedback, admin event management, audio
-announcements, and a user dashboard summary.
+announcements, promo videos with captions or transcripts, and a user dashboard
+summary.
 
 ## Run locally
 
@@ -52,5 +53,13 @@ regular users. Admins can upload audio when creating an announcement, update
 its title/publication status, publish/unpublish it, and delete it. The current
 update endpoint does not persist replacement audio, so the edit form doesn't
 offer an upload control. Audio playback uses the browser's native controls.
+
+Promos are paginated from the API, with unpublished items hidden from regular
+users. Admins can create, edit, publish/unpublish, and delete promos. Video
+uploads are sent as multipart form data and validated against the API's
+MP4/MOV/AVI/MKV and 8 MB limits. New promos are published by default. The API
+stores caption text rather than generating a caption file: valid WebVTT text
+beginning with `WEBVTT` is made available as selectable captions, while plain
+text is displayed as a transcript.
 
 Tailwind CSS and jQuery are loaded from their public CDNs.

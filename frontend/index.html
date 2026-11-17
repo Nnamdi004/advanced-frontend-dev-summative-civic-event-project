@@ -30,6 +30,7 @@
         <nav id="app-nav" class="app-nav" aria-label="Main navigation" hidden>
           <a href="#events" data-route="events">Events</a>
           <a href="#announcements" data-route="announcements">Announcements</a>
+          <a href="#promos" data-route="promos">Promos</a>
           <a href="#my-registrations" data-route="my-registrations">My registrations</a>
           <a id="admin-nav-link" href="#admin-events" data-route="admin-events" hidden>Admin</a>
           <button id="nav-logout-button" class="nav-logout" type="button">Sign out</button>
@@ -264,6 +265,81 @@
                 <a class="secondary-button cancel-form-link" href="#announcements">Cancel</a>
                 <button id="announcement-form-submit" class="primary-button event-form-submit" type="submit">
                   <span class="event-form-button-label">Create announcement</span>
+                  <span class="button-spinner" aria-hidden="true" hidden></span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section id="promos-view" class="app-view" aria-labelledby="promos-title" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="form-eyebrow">WATCH & DISCOVER</p>
+              <h1 id="promos-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Promos</h1>
+              <p class="mt-2 text-slate-600">Stories and highlights from around the community.</p>
+            </div>
+            <a id="create-promo-link" href="#create-promo" class="primary-button create-event-link" hidden>New promo <span aria-hidden="true">+</span></a>
+          </div>
+          <div id="promos-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading videos…</div>
+          <div id="promos-error" class="empty-state error-state" role="alert" hidden>
+            <h2>Promos didn’t load</h2>
+            <p id="promos-error-message"></p>
+            <button id="retry-promos" class="secondary-button retry-button" type="button">Try again</button>
+          </div>
+          <div id="promos-empty" class="empty-state" hidden>
+            <span class="empty-icon" aria-hidden="true">▶</span>
+            <h2>No promos to show</h2>
+            <p>Check back soon for more community stories.</p>
+          </div>
+          <div id="promos-grid" class="promos-grid" aria-live="polite"></div>
+          <nav id="promos-pagination" class="pagination" aria-label="Promo pages" hidden></nav>
+        </section>
+
+        <section id="promo-detail-view" class="app-view" aria-labelledby="promo-detail-title" hidden>
+          <a class="back-link" href="#promos"><span aria-hidden="true">←</span> All promos</a>
+          <div id="promo-detail-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading promo…</div>
+          <div id="promo-detail-error" class="empty-state error-state" role="alert" hidden>
+            <h2>We couldn’t open this promo</h2>
+            <p id="promo-detail-error-message"></p>
+            <a class="text-link font-bold" href="#promos">Return to promos</a>
+          </div>
+          <article id="promo-detail-content" class="promo-detail" hidden></article>
+        </section>
+
+        <section id="promo-form-view" class="app-view" aria-labelledby="promo-form-title" hidden>
+          <a class="back-link" href="#promos"><span aria-hidden="true">←</span> Promos</a>
+          <div class="event-form-panel">
+            <p class="form-eyebrow">PROMO MANAGEMENT</p>
+            <h1 id="promo-form-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight">Create promo</h1>
+            <p class="mt-2 text-slate-600">Share a video story with the community.</p>
+            <form id="promo-form" class="event-form" novalidate>
+              <div id="promo-form-error" class="form-error" role="alert" hidden></div>
+              <label class="field-label" for="promo-form-title-input">Title</label>
+              <input class="form-input" id="promo-form-title-input" name="title" type="text" maxlength="255" required>
+
+              <label class="field-label mt-5" for="promo-form-description">Description</label>
+              <textarea class="form-input event-description-input" id="promo-form-description" name="description" rows="4" required></textarea>
+
+              <div id="promo-video-upload-field">
+                <label class="field-label mt-5" for="promo-form-video">Video file</label>
+                <input class="form-input file-input" id="promo-form-video" name="video" type="file" accept=".mp4,.mov,.avi,.mkv,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska" aria-describedby="promo-video-guidance">
+                <p id="promo-video-guidance" class="field-guidance">MP4, MOV, AVI, or MKV. Maximum file size: 8 MB.</p>
+                <video id="promo-video-preview" class="promo-preview-video" controls preload="metadata" playsinline aria-label="Preview selected promo video" hidden></video>
+              </div>
+              <div id="promo-edit-video-note" class="publish-api-note" role="note" hidden>
+                Upload a replacement video if needed; the current API supports video replacement during editing.
+              </div>
+
+              <label class="field-label mt-5" for="promo-form-captions">Captions or transcript</label>
+              <textarea class="form-input promo-captions-input" id="promo-form-captions" name="caption_text" rows="7" required aria-describedby="promo-captions-guidance" placeholder="Enter a transcript or WebVTT captions beginning with WEBVTT"></textarea>
+              <p id="promo-captions-guidance" class="field-guidance">WebVTT timing enables selectable captions. Plain text is shown as a transcript. Required by the API.</p>
+              <p id="promo-publish-note" class="publish-api-note" role="note">New promos are published by default. You can unpublish them from the promo list after creation.</p>
+
+              <div class="event-form-actions">
+                <a class="secondary-button cancel-form-link" href="#promos">Cancel</a>
+                <button id="promo-form-submit" class="primary-button event-form-submit" type="submit">
+                  <span class="event-form-button-label">Create promo</span>
                   <span class="button-spinner" aria-hidden="true" hidden></span>
                 </button>
               </div>
