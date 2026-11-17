@@ -2,7 +2,8 @@
 
 The frontend is a static HTML, Tailwind CSS, and jQuery application. It connects
 to the Express API and currently implements signup, login, event discovery,
-event details, registrations, event feedback, and a user dashboard summary.
+event details, registrations, event feedback, admin event management, and a user
+dashboard summary.
 
 ## Run locally
 
@@ -40,5 +41,10 @@ feedback. Admins can also see the event's feedback list and average rating.
 This follows the current API permissions: `GET /api/event-feedback/event/:id`
 is admin-only, while users can retrieve their own feedback from
 `/api/event-feedback/my-feedback`.
+
+Administrators can create, edit, and delete events. Event images are uploaded
+as multipart form data and validated against the API's JPG/PNG/GIF and 2 MB
+limits. The current backend creates events as published by default and does not
+support changing publication state from its event routes.
 
 Tailwind CSS and jQuery are loaded from their public CDNs.

@@ -30,6 +30,7 @@
         <nav id="app-nav" class="app-nav" aria-label="Main navigation" hidden>
           <a href="#events" data-route="events">Events</a>
           <a href="#my-registrations" data-route="my-registrations">My registrations</a>
+          <a id="admin-nav-link" href="#admin-events" data-route="admin-events" hidden>Admin</a>
           <button id="nav-logout-button" class="nav-logout" type="button">Sign out</button>
         </nav>
       </header>
@@ -167,6 +168,7 @@
               <h1 id="events-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Upcoming events</h1>
               <p class="mt-2 text-slate-600">Find your next way to connect with the community.</p>
             </div>
+            <a id="create-event-link" href="#create-event" class="primary-button create-event-link" hidden>Create event <span aria-hidden="true">+</span></a>
           </div>
           <div class="event-filters" role="search" aria-label="Filter events">
             <label class="filter-field filter-search" for="event-search">
@@ -206,6 +208,53 @@
             <a class="text-link font-bold" href="#events">Return to events</a>
           </div>
           <article id="event-detail-content" class="event-detail" hidden></article>
+        </section>
+
+        <section id="event-form-view" class="app-view" aria-labelledby="event-form-title" hidden>
+          <a class="back-link" href="#admin-events"><span aria-hidden="true">←</span> Manage events</a>
+          <div class="event-form-panel">
+            <p class="form-eyebrow">EVENT MANAGEMENT</p>
+            <h1 id="event-form-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight">Create event</h1>
+            <p class="mt-2 text-slate-600">Add the details your community needs to show up.</p>
+            <form id="event-form" class="event-form" novalidate>
+              <div id="event-form-error" class="form-error" role="alert" hidden></div>
+              <label class="field-label" for="event-form-title-input">Event title</label>
+              <input class="form-input" id="event-form-title-input" name="title" type="text" maxlength="255" required>
+
+              <label class="field-label mt-5" for="event-form-description">Description</label>
+              <textarea class="form-input event-description-input" id="event-form-description" name="description" rows="5" placeholder="Tell people what to expect"></textarea>
+
+              <label class="field-label mt-5" for="event-form-location">Location</label>
+              <input class="form-input" id="event-form-location" name="location" type="text" maxlength="255" required>
+
+              <div class="event-datetime-grid mt-5">
+                <div>
+                  <label class="field-label" for="event-form-start">Starts</label>
+                  <input class="form-input" id="event-form-start" name="starts_at" type="datetime-local" required>
+                </div>
+                <div>
+                  <label class="field-label" for="event-form-end">Ends</label>
+                  <input class="form-input" id="event-form-end" name="ends_at" type="datetime-local" required>
+                </div>
+              </div>
+
+              <label class="field-label mt-5" for="event-form-image">Event image (optional)</label>
+              <input class="form-input file-input" id="event-form-image" name="image" type="file" accept=".jpg,.jpeg,.png,.gif,image/jpeg,image/png,image/gif" aria-describedby="event-image-guidance">
+              <p id="event-image-guidance" class="field-guidance">JPG, PNG, or GIF. Maximum file size: 2 MB.</p>
+              <div id="event-image-preview" class="event-image-preview" hidden>
+                <img id="event-image-preview-img" alt="Selected event image preview">
+                <p id="event-image-preview-caption"></p>
+              </div>
+              <p class="publish-api-note" role="note">The current API publishes new events by default and does not provide a publish/unpublish control.</p>
+              <div class="event-form-actions">
+                <a class="secondary-button cancel-form-link" href="#admin-events">Cancel</a>
+                <button id="event-form-submit" class="primary-button event-form-submit" type="submit">
+                  <span class="event-form-button-label">Create event</span>
+                  <span class="button-spinner" aria-hidden="true" hidden></span>
+                </button>
+              </div>
+            </form>
+          </div>
         </section>
 
         <section id="my-registrations-view" class="app-view" aria-labelledby="registrations-title" hidden>

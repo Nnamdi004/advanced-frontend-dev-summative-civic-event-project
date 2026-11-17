@@ -16,6 +16,9 @@ let registrationsLoaded = false;
 let currentEventsPage = 1;
 let currentRoute = "login";
 let currentEventId = null;
+let editingEventId = null;
+let imagePreviewObjectUrl = null;
+let existingEventImageUrl = "";
 
 function readSession() {
   try {
@@ -51,8 +54,12 @@ function apiRequest(path, options = {}) {
   };
 
   if (options.body !== undefined) {
-    headers.set("Content-Type", "application/json");
-    request.body = JSON.stringify(options.body);
+    if (options.body instanceof FormData) {
+      request.body = options.body;
+    } else {
+      headers.set("Content-Type", "application/json");
+      request.body = JSON.stringify(options.body);
+    }
   }
 
   if (options.auth !== false && authState.token) {
@@ -129,6 +136,14 @@ function isAdmin() {
 
 function escapePathSegment(value) {
   return encodeURIComponent(String(value));
+}
+
+function decodePathSegment(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    return "";
+  }
 }
 
 function eventDateTime(dateValue) {
@@ -229,8 +244,18 @@ function makeEventCard(event, registration = null) {
   $("<a>").addClass("event-view-link").attr("href", `#event/${escapePathSegment(eventId)}`)
     .text("View details").appendTo($body);
 
+  const $actions = $("<div>").addClass("event-card-actions").appendTo($body);
   if (!registration || registration.status === "registered") {
-    eventActionButton(eventId).appendTo($body);
+    eventActionButton(eventId).appendTo($actions);
+  }
+  if (isAdmin()) {
+    $("<a>").addClass("event-edit-button")
+      .attr("href", `#edit-event/${escapePathSegment(eventId)}`)
+      .text("Edit").appendTo($actions);
+    $("<button>").attr({
+      type: "button",
+      "data-delete-event": eventId,
+    }).addClass("event-delete-button").text("Delete").appendTo($actions);
   }
   return $card;
 }
@@ -314,6 +339,171 @@ function loadEvents() {
     if (!authState.token) return;
     $("#events-error-message").text(error.message);
     $("#events-error").prop("hidden", false);
+  });
+}
+
+function dateTimeInputValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const localTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localTime.toISOString().slice(0, 16);
+}
+
+function setEventImagePreview(url, caption) {
+  if (imagePreviewObjectUrl) {
+    URL.revokeObjectURL(imagePreviewObjectUrl);
+    imagePreviewObjectUrl = null;
+  }
+  if (url && url.startsWith("blob:")) imagePreviewObjectUrl = url;
+
+  if (!url) {
+    $("#event-image-preview").prop("hidden", true);
+    $("#event-image-preview-img").removeAttr("src");
+    $("#event-image-preview-caption").text("");
+    return;
+  }
+
+  $("#event-image-preview-img").attr("src", url);
+  $("#event-image-preview-caption").text(caption || "Image preview");
+  $("#event-image-preview").prop("hidden", false);
+}
+
+function validateEventImage(file) {
+  if (!file) return "";
+  const extension = file.name.split(".").pop().toLowerCase();
+  if (!["jpg", "jpeg", "png", "gif"].includes(extension)) {
+    return "Choose a JPG, PNG, or GIF image.";
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    return "The image must be 2 MB or smaller.";
+  }
+  return "";
+}
+
+function loadEventForm(eventId = null) {
+  const form = $("#event-form")[0];
+  form.reset();
+  editingEventId = eventId;
+  existingEventImageUrl = "";
+  $("#event-form-error").prop("hidden", true).text("");
+  $("#event-form-title").text(eventId ? "Edit event" : "Create event");
+  $("#event-form-submit .event-form-button-label").text(eventId ? "Save changes" : "Create event");
+  $("#event-form-image").val("");
+  setEventImagePreview("", "");
+
+  if (!eventId) return;
+
+  $("#event-form-submit .event-form-button-label").text("Loading event…");
+  apiRequest(`/api/events/${escapePathSegment(eventId)}`).then((response) => {
+    if (editingEventId !== eventId) return;
+    const event = response.data;
+    if (!event || !event.id) {
+      throw new Error("This event could not be found.");
+    }
+
+    $("#event-form-title-input").val(event.title || "");
+    $("#event-form-description").val(event.description || "");
+    $("#event-form-location").val(event.location || "");
+    $("#event-form-start").val(dateTimeInputValue(event.starts_at));
+    $("#event-form-end").val(dateTimeInputValue(event.ends_at));
+    const imageUrl = safeMediaUrl(event.metadata && event.metadata.image_url);
+    existingEventImageUrl = imageUrl;
+    if (imageUrl) setEventImagePreview(imageUrl, "Current event image");
+    $("#event-form-submit .event-form-button-label").text("Save changes");
+  }).catch((error) => {
+    if (editingEventId !== eventId) return;
+    $("#event-form-error").text(error.message).prop("hidden", false);
+    $("#event-form-submit .event-form-button-label").text("Save changes");
+  });
+}
+
+function saveEventForm(event) {
+  event.preventDefault();
+  if (!isAdmin()) {
+    showToast("Only administrators can manage events.", true);
+    return;
+  }
+
+  const title = $("#event-form-title-input").val().trim();
+  const description = $("#event-form-description").val().trim();
+  const location = $("#event-form-location").val().trim();
+  const startsAt = $("#event-form-start").val();
+  const endsAt = $("#event-form-end").val();
+  const image = $("#event-form-image")[0].files[0];
+  $("#event-form-error").prop("hidden", true).text("");
+
+  if (!title || !location || !startsAt || !endsAt) {
+    $("#event-form-error").text("Enter an event title, location, start time, and end time.").prop("hidden", false);
+    return;
+  }
+  const startDate = new Date(startsAt);
+  const endDate = new Date(endsAt);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
+    $("#event-form-error").text("The end time must be after the start time.").prop("hidden", false);
+    return;
+  }
+  const imageError = validateEventImage(image);
+  if (imageError) {
+    $("#event-form-error").text(imageError).prop("hidden", false);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("description", description);
+  formData.append("location", location);
+  formData.append("starts_at", startDate.toISOString());
+  formData.append("ends_at", endDate.toISOString());
+  if (image) formData.append("image", image);
+
+  const isEditing = Boolean(editingEventId);
+  const path = isEditing ? `/api/events/${escapePathSegment(editingEventId)}` : "/api/events";
+  const $button = $("#event-form-submit");
+  $button.prop("disabled", true);
+  $button.find(".event-form-button-label").text("Saving event…");
+  $button.find(".button-spinner").prop("hidden", false);
+
+  apiRequest(path, {
+    method: isEditing ? "PUT" : "POST",
+    body: formData,
+  }).then((response) => {
+    eventsLoaded = false;
+    window.history.replaceState(null, "", "#admin-events");
+    navigateAuthenticatedRoute("admin-events");
+    showToast(response.message || (isEditing ? "Event updated." : "Event created."));
+  }).catch((error) => {
+    $("#event-form-error").text(error.message).prop("hidden", false);
+  }).finally(() => {
+    $button.prop("disabled", false);
+    $button.find(".event-form-button-label").text(isEditing ? "Save changes" : "Create event");
+    $button.find(".button-spinner").prop("hidden", true);
+  });
+}
+
+function deleteEvent(eventId) {
+  if (!isAdmin()) {
+    showToast("Only administrators can manage events.", true);
+    return;
+  }
+  const event = events.find((item) => item.id === eventId);
+  const eventTitle = event ? event.title : "this event";
+  if (!window.confirm(`Delete "${eventTitle}"? This action cannot be undone.`)) return;
+
+  apiRequest(`/api/events/${escapePathSegment(eventId)}`, { method: "DELETE" }).then((response) => {
+    events = events.filter((item) => item.id !== eventId);
+    eventsLoaded = true;
+    registrations = registrations.filter((item) => item.event_id !== eventId);
+    if (currentRoute === "event-detail") {
+      window.history.replaceState(null, "", "#admin-events");
+      navigateAuthenticatedRoute("admin-events");
+    } else {
+      renderEvents();
+      updateDashboardSummary();
+    }
+    showToast(response.message || "Event deleted.");
+  }).catch((error) => {
+    showToast(error.message, true);
   });
 }
 
@@ -416,6 +606,15 @@ function renderEventDetail(event) {
   $("<div>").addClass("event-detail-description").text(event.description || "More event details will be shared soon.").appendTo($body);
   const $actions = $("<div>").addClass("event-detail-actions").appendTo($body);
   eventActionButton(event.id).appendTo($actions);
+  if (isAdmin()) {
+    $("<a>").addClass("event-edit-button")
+      .attr("href", `#edit-event/${escapePathSegment(event.id)}`)
+      .text("Edit event").appendTo($actions);
+    $("<button>").attr({
+      type: "button",
+      "data-delete-event": event.id,
+    }).addClass("event-delete-button").text("Delete event").appendTo($actions);
+  }
   const $feedback = $("<section>").addClass("feedback-section")
     .attr("aria-labelledby", "event-feedback-title")
     .appendTo($body);
@@ -535,10 +734,10 @@ function renderEventFeedback(eventId, ownFeedback, allFeedback) {
 }
 
 function renderRegistrationsFromCurrentData() {
-  if (currentRoute === "events") renderEvents();
+  if (currentRoute === "events" || currentRoute === "admin-events") renderEvents();
   if (currentRoute === "event-detail") {
     const eventId = window.location.hash.slice("#event/".length);
-    loadEventDetail(decodeURIComponent(eventId));
+    loadEventDetail(decodePathSegment(eventId));
   }
   if (currentRoute === "my-registrations") loadRegistrations();
   updateDashboardSummary();
@@ -588,10 +787,17 @@ function showAppView(route) {
   $(".app-view").prop("hidden", true);
   currentRoute = route;
 
-  const routeView = route === "event-detail" ? "event-detail" : route;
+  const routeView = route === "admin-events" ? "events" : route;
   $(`#${routeView}-view`).prop("hidden", false);
+  $("#admin-nav-link").prop("hidden", !isAdmin());
+  $("#create-event-link").prop("hidden", !isAdmin() || !["events", "admin-events"].includes(route));
   $("#app-nav a").removeClass("active");
-  $(`#app-nav a[data-route="${route === "event-detail" ? "events" : route}"]`).addClass("active");
+  const activeRoute = route === "event-detail"
+    ? "events"
+    : route === "event-form" || route === "admin-events"
+      ? "admin-events"
+      : route;
+  $(`#app-nav a[data-route="${activeRoute}"]`).addClass("active");
 
   if (route === "dashboard") {
     updateDashboardSummary();
@@ -609,11 +815,41 @@ function showAppView(route) {
         $("#dashboard-event-count, #dashboard-registration-count").text("—");
       });
     }
-  } else if (route === "events") {
+  } else if (route === "events" || route === "admin-events") {
     loadEvents();
   } else if (route === "my-registrations") {
     loadRegistrations();
   }
+}
+
+function navigateAuthenticatedRoute(route) {
+  const adminOnlyRoute = route === "admin-events" || route === "create-event" || route.startsWith("edit-event/");
+  if (adminOnlyRoute && !isAdmin()) {
+    showToast("That page is available to administrators only.", true);
+    route = "events";
+    window.history.replaceState(null, "", "#events");
+  }
+
+  if (route.startsWith("event/")) {
+    showAppView("event-detail");
+    loadEventDetail(decodePathSegment(route.slice("event/".length)));
+    return;
+  }
+  if (route === "create-event") {
+    showAppView("event-form");
+    loadEventForm();
+    return;
+  }
+  if (route.startsWith("edit-event/")) {
+    showAppView("event-form");
+    loadEventForm(decodePathSegment(route.slice("edit-event/".length)));
+    return;
+  }
+  if (["events", "admin-events", "my-registrations"].includes(route)) {
+    showAppView(route);
+    return;
+  }
+  showAppView("dashboard");
 }
 
 function renderDashboard() {
@@ -622,17 +858,13 @@ function renderDashboard() {
   $("#dashboard-email").text(user.email || "");
   $("#dashboard-role").text(user.role || "user");
   const currentHash = window.location.hash;
-  if (!["#events", "#my-registrations", "#dashboard"].includes(currentHash) && !currentHash.startsWith("#event/")) {
+  const route = currentHash.slice(1);
+  if (!["events", "admin-events", "my-registrations", "dashboard", "create-event"].includes(route)
+      && !route.startsWith("event/")
+      && !route.startsWith("edit-event/")) {
     window.history.replaceState(null, "", "#dashboard");
   }
-
-  const route = window.location.hash.slice(1);
-  if (route.startsWith("event/")) {
-    showAppView("event-detail");
-    loadEventDetail(decodeURIComponent(route.slice("event/".length)));
-  } else {
-    showAppView(["events", "my-registrations"].includes(route) ? route : "dashboard");
-  }
+  navigateAuthenticatedRoute(window.location.hash.slice(1));
 }
 
 function passwordScore(password) {
@@ -779,8 +1011,14 @@ $(function () {
   $("#events-grid").on("click", "[data-event-action]", function () {
     changeRegistration($(this).attr("data-event-id"), $(this).attr("data-event-action"), $(this));
   });
+  $("#events-grid").on("click", "[data-delete-event]", function () {
+    deleteEvent($(this).attr("data-delete-event"));
+  });
   $("#event-detail-content").on("click", "[data-event-action]", function () {
     changeRegistration($(this).attr("data-event-id"), $(this).attr("data-event-action"), $(this));
+  });
+  $("#event-detail-content").on("click", "[data-delete-event]", function () {
+    deleteEvent($(this).attr("data-delete-event"));
   });
   $("#event-detail-content").on("click", "[data-retry-feedback]", function () {
     loadEventFeedback($(this).attr("data-retry-feedback"));
@@ -819,12 +1057,32 @@ $(function () {
   });
   $("#retry-events").on("click", loadEvents);
   $("#retry-registrations").on("click", loadRegistrations);
+  $("#event-form-image").on("change", function () {
+    const file = this.files[0];
+    const imageError = validateEventImage(file);
+    if (imageError) {
+      this.value = "";
+      $("#event-form-error").text(imageError).prop("hidden", false);
+      setEventImagePreview(existingEventImageUrl, existingEventImageUrl ? "Current event image" : "");
+      return;
+    }
+
+    $("#event-form-error").prop("hidden", true).text("");
+    setEventImagePreview(file ? URL.createObjectURL(file) : existingEventImageUrl, file ? file.name : "Current event image");
+  });
+  $("#event-form").on("submit", saveEventForm);
   $("#nav-logout-button").on("click", () => {
     clearSession();
     events = [];
     registrations = [];
     eventsLoaded = false;
     registrationsLoaded = false;
+    currentEventId = null;
+    editingEventId = null;
+    if (imagePreviewObjectUrl) {
+      URL.revokeObjectURL(imagePreviewObjectUrl);
+      imagePreviewObjectUrl = null;
+    }
     $("#auth-main").prop("hidden", false);
     $("#app-main, #app-nav").prop("hidden", true);
     $("#header-note").prop("hidden", false);
@@ -842,13 +1100,7 @@ $(function () {
       return;
     }
 
-    const route = window.location.hash.slice(1);
-    if (route.startsWith("event/")) {
-      showAppView("event-detail");
-      loadEventDetail(decodeURIComponent(route.slice("event/".length)));
-    } else {
-      showAppView(["events", "my-registrations"].includes(route) ? route : "dashboard");
-    }
+    navigateAuthenticatedRoute(window.location.hash.slice(1));
   });
 
   checkRestoredSession();
