@@ -29,6 +29,7 @@
         </div>
         <nav id="app-nav" class="app-nav" aria-label="Main navigation" hidden>
           <a href="#events" data-route="events">Events</a>
+          <a href="#announcements" data-route="announcements">Announcements</a>
           <a href="#my-registrations" data-route="my-registrations">My registrations</a>
           <a id="admin-nav-link" href="#admin-events" data-route="admin-events" hidden>Admin</a>
           <button id="nav-logout-button" class="nav-logout" type="button">Sign out</button>
@@ -197,6 +198,77 @@
           </div>
           <div id="events-grid" class="events-grid" aria-live="polite"></div>
           <nav id="events-pagination" class="pagination" aria-label="Event pages" hidden></nav>
+        </section>
+
+        <section id="announcements-view" class="app-view" aria-labelledby="announcements-title" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="form-eyebrow">COMMUNITY VOICES</p>
+              <h1 id="announcements-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Announcements</h1>
+              <p class="mt-2 text-slate-600">Listen in on the latest news from your community.</p>
+            </div>
+            <a id="create-announcement-link" href="#create-announcement" class="primary-button create-event-link" hidden>New announcement <span aria-hidden="true">+</span></a>
+          </div>
+          <div id="announcements-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading announcements…</div>
+          <div id="announcements-error" class="empty-state error-state" role="alert" hidden>
+            <h2>Announcements didn’t load</h2>
+            <p id="announcements-error-message"></p>
+            <button id="retry-announcements" class="secondary-button retry-button" type="button">Try again</button>
+          </div>
+          <div id="announcements-empty" class="empty-state" hidden>
+            <span class="empty-icon" aria-hidden="true">♫</span>
+            <h2>No announcements yet</h2>
+            <p>Check back soon for updates from your community.</p>
+          </div>
+          <div id="announcements-grid" class="announcements-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="announcement-detail-view" class="app-view" aria-labelledby="announcement-detail-title" hidden>
+          <a class="back-link" href="#announcements"><span aria-hidden="true">←</span> All announcements</a>
+          <div id="announcement-detail-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading announcement…</div>
+          <div id="announcement-detail-error" class="empty-state error-state" role="alert" hidden>
+            <h2>We couldn’t open this announcement</h2>
+            <p id="announcement-detail-error-message"></p>
+            <a class="text-link font-bold" href="#announcements">Return to announcements</a>
+          </div>
+          <article id="announcement-detail-content" class="announcement-detail" hidden></article>
+        </section>
+
+        <section id="announcement-form-view" class="app-view" aria-labelledby="announcement-form-title" hidden>
+          <a class="back-link" href="#announcements"><span aria-hidden="true">←</span> Announcements</a>
+          <div class="event-form-panel">
+            <p class="form-eyebrow">ANNOUNCEMENT MANAGEMENT</p>
+            <h1 id="announcement-form-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight">Create announcement</h1>
+            <p class="mt-2 text-slate-600">Share an audio update with your community.</p>
+            <form id="announcement-form" class="event-form" novalidate>
+              <div id="announcement-form-error" class="form-error" role="alert" hidden></div>
+              <label class="field-label" for="announcement-form-title-input">Title</label>
+              <input class="form-input" id="announcement-form-title-input" name="title" type="text" maxlength="255" required>
+
+              <div id="announcement-audio-upload-field">
+                <label class="field-label mt-5" for="announcement-form-audio">Audio file</label>
+                <input class="form-input file-input" id="announcement-form-audio" name="audio" type="file" accept=".mp3,.wav,.m4a,.ogg,audio/mpeg,audio/wav,audio/mp4,audio/ogg" aria-describedby="announcement-audio-guidance">
+                <p id="announcement-audio-guidance" class="field-guidance">MP3, WAV, M4A, or OGG. Maximum file size: 5 MB.</p>
+                <audio id="announcement-audio-preview" class="announcement-preview-player" controls preload="metadata" aria-label="Preview selected announcement audio" hidden></audio>
+              </div>
+              <div id="announcement-edit-audio-note" class="publish-api-note" role="note" hidden>
+                The current API doesn’t support replacing the audio file after an announcement is created.
+                <audio id="announcement-current-audio" class="announcement-preview-player" controls preload="none" aria-label="Current announcement audio" hidden></audio>
+              </div>
+
+              <label class="published-toggle mt-5" for="announcement-form-published">
+                <input id="announcement-form-published" name="published" type="checkbox" checked>
+                <span>Publish announcement</span>
+              </label>
+              <div class="event-form-actions">
+                <a class="secondary-button cancel-form-link" href="#announcements">Cancel</a>
+                <button id="announcement-form-submit" class="primary-button event-form-submit" type="submit">
+                  <span class="event-form-button-label">Create announcement</span>
+                  <span class="button-spinner" aria-hidden="true" hidden></span>
+                </button>
+              </div>
+            </form>
+          </div>
         </section>
 
         <section id="event-detail-view" class="app-view" aria-labelledby="event-detail-title" hidden>

@@ -478,7 +478,8 @@ body {
 }
 
 .events-grid,
-.registrations-grid {
+.registrations-grid,
+.announcements-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.1rem;
@@ -496,6 +497,184 @@ body {
 .event-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 30px rgba(31, 57, 39, .09);
+}
+
+.announcement-card {
+  overflow: hidden;
+  border: 1px solid #e6ebe6;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 7px 24px rgba(31, 57, 39, .045);
+}
+
+.announcement-card-header {
+  display: flex;
+  min-height: 105px;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  background:
+    radial-gradient(ellipse at 92% 18%, rgba(196, 221, 202, .6), transparent 40%),
+    #edf4ef;
+  padding: 1.1rem 1.3rem;
+}
+
+.announcement-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(46, 119, 92, .16);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .76);
+  color: var(--green);
+  font-size: 1.6rem;
+}
+
+.announcement-card-body {
+  padding: 1.2rem;
+}
+
+.announcement-date,
+.announcement-duration {
+  color: #708077;
+  font-size: .75rem;
+}
+
+.announcement-card-title {
+  margin-top: .45rem;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.announcement-audio,
+.announcement-detail-audio,
+.announcement-preview-player {
+  display: block;
+  width: 100%;
+}
+
+.announcement-audio {
+  margin-top: 1rem;
+}
+
+.announcement-duration {
+  margin-top: .55rem;
+  font-weight: 600;
+}
+
+.announcement-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: 1rem;
+}
+
+.announcement-publish-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dfe6df;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 .75rem;
+  color: #466451;
+  cursor: pointer;
+  font: inherit;
+  font-size: .77rem;
+  font-weight: 700;
+}
+
+.announcement-publish-button:hover {
+  background: #f3f8f4;
+}
+
+.announcement-error {
+  margin-top: .8rem;
+  color: #963b33;
+  font-size: .83rem;
+}
+
+.announcement-detail {
+  overflow: hidden;
+  border: 1px solid #e6ebe6;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 16px 48px rgba(32, 63, 45, .07);
+}
+
+.announcement-detail-body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+}
+
+.announcement-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+}
+
+.announcement-detail-title {
+  margin-top: .8rem;
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.announcement-detail-body > .announcement-date {
+  margin-top: .8rem;
+}
+
+.announcement-detail-audio {
+  margin-top: 1.8rem;
+}
+
+.announcement-transcript {
+  margin-top: 2rem;
+  border-top: 1px solid #edf0ed;
+  padding-top: 1.4rem;
+}
+
+.announcement-transcript h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.announcement-transcript p {
+  margin-top: .7rem;
+  color: #526258;
+  font-size: .95rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.announcement-detail-actions {
+  margin-top: 2rem;
+  border-top: 1px solid #edf0ed;
+  padding-top: 1.3rem;
+}
+
+.announcement-preview-player {
+  margin-top: .8rem;
+}
+
+.published-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  color: #34443b;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.published-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
 }
 
 .event-card-image,
@@ -1101,19 +1280,23 @@ body {
 @media (max-width: 800px) {
   .dashboard-cards,
   .events-grid,
-  .registrations-grid {
+  .registrations-grid,
+  .announcements-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 600px) {
   .site-header {
+    flex-wrap: wrap;
     gap: .5rem;
     padding-right: 1rem;
     padding-left: 1rem;
   }
 
   .app-nav {
+    width: 100%;
+    justify-content: flex-end;
     gap: 0;
   }
 
@@ -1134,7 +1317,8 @@ body {
 
   .dashboard-cards,
   .events-grid,
-  .registrations-grid {
+  .registrations-grid,
+  .announcements-grid {
     grid-template-columns: 1fr;
   }
 
