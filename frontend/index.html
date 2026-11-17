@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f7f4">
+    <title>CivicEvents+ | Community starts here</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="min-h-screen bg-stone-50 text-slate-900">
+    <div class="page-shell min-h-screen">
+      <header class="site-header flex items-center justify-between px-5 py-5 sm:px-10 lg:px-16">
+        <a class="brand flex items-center gap-3" href="#login" aria-label="CivicEvents+ home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M6 22.5 16 6l10 16.5H6Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M11 22.5c0-3 2.2-5.3 5-5.3s5 2.3 5 5.3" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="font-display text-lg font-extrabold tracking-tight">CivicEvents<span class="brand-plus">+</span></span>
+        </a>
+        <div class="header-note hidden items-center gap-2 text-sm text-slate-500 sm:flex">
+          <span class="status-dot" aria-hidden="true"></span>
+          Your community, in motion
+        </div>
+      </header>
+
+      <main class="mx-auto grid min-h-[calc(100vh-160px)] max-w-7xl grid-cols-1 items-center gap-12 px-5 pb-12 pt-5 sm:px-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-20 lg:px-16">
+        <section class="intro-panel order-2 py-4 lg:order-1 lg:py-12" aria-labelledby="intro-heading">
+          <div class="eyebrow mb-6 flex items-center gap-3">
+            <span class="eyebrow-line"></span>
+            <span>MAKE ROOM FOR GOOD THINGS</span>
+          </div>
+          <h1 id="intro-heading" class="font-display max-w-xl text-4xl font-extrabold leading-[1.12] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
+            Good things happen <span class="headline-accent">when we show up.</span>
+          </h1>
+          <p class="mt-6 max-w-lg text-base leading-7 text-slate-600 sm:text-lg">
+            Find your people, discover what’s happening nearby, and make your next day out count.
+          </p>
+          <div class="community-card mt-10 max-w-md rounded-2xl p-5 sm:p-6">
+            <div class="flex items-start gap-4">
+              <div class="community-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 21s7-4.4 7-11a7 7 0 1 0-14 0c0 6.6 7 11 7 11Z" stroke="currentColor" stroke-width="1.8"/>
+                  <circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </div>
+              <div>
+                <p class="font-display font-bold">Closer to your community</p>
+                <p class="mt-1 text-sm leading-6 text-slate-600">One place for local events, voices, and the moments that bring us together.</p>
+              </div>
+            </div>
+            <div class="community-divider my-5"></div>
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>DISCOVER</span><span class="mini-arrow" aria-hidden="true">→</span><span>CONNECT</span><span class="mini-arrow" aria-hidden="true">→</span><span>SHOW UP</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="auth-panel order-1 mx-auto w-full max-w-md lg:order-2" aria-label="Account access">
+          <div id="auth-card" class="auth-card rounded-3xl bg-white p-6 sm:p-9">
+            <div id="login-view" class="auth-view">
+              <div class="mb-8">
+                <p class="form-eyebrow">WELCOME BACK</p>
+                <h2 class="font-display mt-2 text-3xl font-extrabold tracking-tight">Sign in</h2>
+                <p class="mt-2 text-sm text-slate-500">Pick up where your community left off.</p>
+              </div>
+              <form id="login-form" novalidate>
+                <label class="field-label" for="login-email">Email address</label>
+                <input class="form-input" id="login-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+                <div class="mt-5 flex items-center justify-between">
+                  <label class="field-label mb-0" for="login-password">Password</label>
+                </div>
+                <input class="form-input mt-2" id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+                <div id="login-error" class="form-error mt-4" role="alert" hidden></div>
+                <button class="primary-button mt-7 w-full" type="submit">
+                  <span class="button-label">Sign in to your account</span>
+                  <span class="button-spinner" aria-hidden="true" hidden></span>
+                  <span class="button-arrow" aria-hidden="true">→</span>
+                </button>
+              </form>
+              <p class="mt-7 text-center text-sm text-slate-500">
+                New around here?
+                <a class="text-link font-bold" href="#signup">Create an account</a>
+              </p>
+            </div>
+
+            <div id="signup-view" class="auth-view" hidden>
+              <div class="mb-7">
+                <p class="form-eyebrow">JOIN YOUR COMMUNITY</p>
+                <h2 class="font-display mt-2 text-3xl font-extrabold tracking-tight">Create account</h2>
+                <p class="mt-2 text-sm text-slate-500">Your next great local moment starts here.</p>
+              </div>
+              <form id="signup-form" novalidate>
+                <label class="field-label" for="signup-name">Full name</label>
+                <input class="form-input" id="signup-name" name="full_name" type="text" autocomplete="name" placeholder="Your name" maxlength="120" required>
+                <label class="field-label mt-4" for="signup-email">Email address</label>
+                <input class="form-input" id="signup-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+                <label class="field-label mt-4" for="signup-password">Password</label>
+                <input class="form-input mt-2" id="signup-password" name="password" type="password" autocomplete="new-password" placeholder="Create a strong password" required aria-describedby="password-guidance">
+                <div class="password-meter mt-3" aria-hidden="true"><span id="password-meter-bar"></span></div>
+                <p id="password-guidance" class="mt-2 text-xs leading-5 text-slate-500">Use 8+ characters with uppercase, lowercase, a number, and a special character.</p>
+                <label class="field-label mt-4" for="signup-confirm-password">Confirm password</label>
+                <input class="form-input mt-2" id="signup-confirm-password" name="confirm_password" type="password" autocomplete="new-password" placeholder="Enter your password again" required>
+                <div id="signup-error" class="form-error mt-4" role="alert" hidden></div>
+                <button class="primary-button mt-6 w-full" type="submit">
+                  <span class="button-label">Create your account</span>
+                  <span class="button-spinner" aria-hidden="true" hidden></span>
+                  <span class="button-arrow" aria-hidden="true">→</span>
+                </button>
+              </form>
+              <p class="mt-6 text-center text-sm text-slate-500">
+                Already a member?
+                <a class="text-link font-bold" href="#login">Sign in</a>
+              </p>
+            </div>
+
+            <div id="dashboard-view" class="auth-view" hidden>
+              <div class="dashboard-mark" aria-hidden="true">✓</div>
+              <p class="form-eyebrow mt-6">YOU’RE SIGNED IN</p>
+              <h2 class="font-display mt-2 text-3xl font-extrabold tracking-tight">Welcome, <span id="dashboard-name"></span></h2>
+              <p class="mt-3 text-sm leading-6 text-slate-500">Your CivicEvents+ account is ready. Community events and your personalized dashboard are coming in the next integration step.</p>
+              <div class="account-summary mt-7 rounded-2xl p-4">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">ACCOUNT</p>
+                <p id="dashboard-email" class="mt-1 break-all text-sm font-semibold text-slate-800"></p>
+                <p class="mt-2 text-sm text-slate-600">Access: <span id="dashboard-role" class="font-semibold capitalize"></span></p>
+              </div>
+              <button id="logout-button" class="secondary-button mt-7 w-full" type="button">Sign out</button>
+            </div>
+          </div>
+          <p class="mt-5 text-center text-xs text-slate-400">
+            By continuing, you agree to help make your community a little more connected.
+          </p>
+        </section>
+      </main>
+
+      <footer class="site-footer flex flex-col items-center justify-between gap-2 px-5 py-5 text-xs text-slate-500 sm:flex-row sm:px-10 lg:px-16">
+        <span>© <span id="current-year"></span> CivicEvents+. Made for the places we call home.</span>
+        <a href="mailto:hello@civicevents.example" class="footer-link">Need a hand? Contact us</a>
+      </footer>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
