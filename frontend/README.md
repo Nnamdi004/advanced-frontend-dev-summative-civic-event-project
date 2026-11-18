@@ -3,8 +3,8 @@
 The frontend is a static HTML, Tailwind CSS, and jQuery application. It connects
 to the Express API and currently implements signup, login, event discovery,
 event details, registrations, event feedback, admin event management, audio
-announcements, promo videos with captions or transcripts, and a user dashboard
-summary.
+announcements, promo videos with captions or transcripts, notifications, and a
+user dashboard summary.
 
 ## Run locally
 
@@ -18,9 +18,14 @@ summary.
 
 3. Open `http://localhost:5500`.
 
-The API base URL is configured at the top of `app.js`. Change it if the backend
-is running on a different host or port. The backend must allow the frontend's
-origin through CORS.
+The API base URL is configured at the top of `js/core.js`. Change it if the
+backend is running on a different host or port. The backend must allow the
+frontend's origin through CORS.
+
+Client code is split into classic scripts under `js/`: shared state and API
+helpers are in `core.js`, feature logic is in separate files, and `app.js`
+contains routing and startup. `index.html` loads them in dependency order; keep
+these script tags sequential and do not add `async`.
 
 ## Authentication and event notes
 
@@ -61,5 +66,12 @@ MP4/MOV/AVI/MKV and 8 MB limits. New promos are published by default. The API
 stores caption text rather than generating a caption file: valid WebVTT text
 beginning with `WEBVTT` is made available as selectable captions, while plain
 text is displayed as a transcript.
+
+The notification inbox loads broadcast and user-targeted notifications, shows
+the unread count in the navigation bell, and links notifications to related
+events, announcements, or promos when metadata is available. Admins can delete
+notifications. The current API has no mark-as-read endpoint, so opening a
+notification does not change its unread state; the bell reflects the `read`
+value supplied by the backend.
 
 Tailwind CSS and jQuery are loaded from their public CDNs.

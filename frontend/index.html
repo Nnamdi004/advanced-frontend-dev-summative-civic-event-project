@@ -31,6 +31,13 @@
           <a href="#events" data-route="events">Events</a>
           <a href="#announcements" data-route="announcements">Announcements</a>
           <a href="#promos" data-route="promos">Promos</a>
+          <a id="notifications-nav-link" class="notification-nav-link" href="#notifications" data-route="notifications" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Notifications</span>
+            <span id="notifications-unread-count" class="notification-count" hidden>0</span>
+          </a>
           <a href="#my-registrations" data-route="my-registrations">My registrations</a>
           <a id="admin-nav-link" href="#admin-events" data-route="admin-events" hidden>Admin</a>
           <button id="nav-logout-button" class="nav-logout" type="button">Sign out</button>
@@ -347,6 +354,40 @@
           </div>
         </section>
 
+        <section id="notifications-view" class="app-view" aria-labelledby="notifications-title" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="form-eyebrow">KEEP IN THE LOOP</p>
+              <h1 id="notifications-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Notifications</h1>
+              <p class="mt-2 text-slate-600">Updates about events and stories from your community.</p>
+              <p class="notification-read-note">Opening a notification doesn’t mark it as read yet.</p>
+            </div>
+          </div>
+          <div id="notifications-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading notifications…</div>
+          <div id="notifications-error" class="empty-state error-state" role="alert" hidden>
+            <h2>Notifications didn’t load</h2>
+            <p id="notifications-error-message"></p>
+            <button id="retry-notifications" class="secondary-button retry-button" type="button">Try again</button>
+          </div>
+          <div id="notifications-empty" class="empty-state" hidden>
+            <span class="empty-icon" aria-hidden="true">✦</span>
+            <h2>You’re all caught up</h2>
+            <p>New community updates will appear here.</p>
+          </div>
+          <div id="notifications-grid" class="notifications-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="notification-detail-view" class="app-view" aria-labelledby="notification-detail-title" hidden>
+          <a class="back-link" href="#notifications"><span aria-hidden="true">←</span> All notifications</a>
+          <div id="notification-detail-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading notification…</div>
+          <div id="notification-detail-error" class="empty-state error-state" role="alert" hidden>
+            <h2>We couldn’t open this notification</h2>
+            <p id="notification-detail-error-message"></p>
+            <a class="text-link font-bold" href="#notifications">Return to notifications</a>
+          </div>
+          <article id="notification-detail-content" class="notification-detail" hidden></article>
+        </section>
+
         <section id="event-detail-view" class="app-view" aria-labelledby="event-detail-title" hidden>
           <a class="back-link" href="#events"><span aria-hidden="true">←</span> All events</a>
           <div id="event-detail-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading event details…</div>
@@ -436,6 +477,12 @@
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-    <script src="app.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/event-details.js"></script>
+    <script src="js/announcements.js"></script>
+    <script src="js/promos.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/app.js"></script>
   </body>
 </html>
