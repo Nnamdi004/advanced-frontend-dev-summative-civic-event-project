@@ -13,9 +13,11 @@ function showAppView(route) {
     "promo-detail": "promo-detail",
     "promo-form": "promo-form",
     "notification-detail": "notification-detail",
+    "admin-user-detail": "admin-user-detail",
   })[route] || route;
   $(`#${routeView}-view`).prop("hidden", false);
   $("#admin-dashboard-nav-link").prop("hidden", !isAdmin());
+  $("#admin-users-nav-link").prop("hidden", !isAdmin());
   $("#admin-nav-link").prop("hidden", !isAdmin());
   $("#create-event-link").prop("hidden", !isAdmin() || !["events", "admin-events"].includes(route));
   $("#create-announcement-link").prop("hidden", !isAdmin() || route !== "announcements");
@@ -30,6 +32,7 @@ function showAppView(route) {
     "promo-detail": "promos",
     "promo-form": "promos",
     "notification-detail": "notifications",
+    "admin-user-detail": "admin-users",
   })[route] || route;
   $(`#app-nav a[data-route="${activeRoute}"]`).addClass("active");
 
@@ -64,6 +67,8 @@ function showAppView(route) {
     else loadPromos(currentPromosPage);
   } else if (route === "notifications") {
     loadNotifications();
+  } else if (route === "admin-users") {
+    loadAdminUsers();
   } else if (route === "my-registrations") {
     loadRegistrations();
   }
@@ -76,7 +81,9 @@ function navigateAuthenticatedRoute(route) {
     || route === "create-announcement"
     || route.startsWith("edit-announcement/")
     || route === "create-promo"
-    || route.startsWith("edit-promo/");
+    || route.startsWith("edit-promo/")
+    || route === "admin-users"
+    || route.startsWith("admin-user/");
   if (adminOnlyRoute && !isAdmin()) {
     showToast("That page is available to administrators only.", true);
     route = "events";
@@ -101,6 +108,11 @@ function navigateAuthenticatedRoute(route) {
   if (route.startsWith("notification/")) {
     showAppView("notification-detail");
     loadNotificationDetail(decodePathSegment(route.slice("notification/".length)));
+    return;
+  }
+  if (route.startsWith("admin-user/")) {
+    showAppView("admin-user-detail");
+    loadAdminUserDetail(decodePathSegment(route.slice("admin-user/".length)));
     return;
   }
   if (route === "create-event") {
@@ -133,7 +145,7 @@ function navigateAuthenticatedRoute(route) {
     loadPromoForm(decodePathSegment(route.slice("edit-promo/".length)));
     return;
   }
-  if (["events", "admin-events", "announcements", "promos", "notifications", "my-registrations"].includes(route)) {
+  if (["events", "admin-events", "announcements", "promos", "notifications", "admin-users", "my-registrations"].includes(route)) {
     showAppView(route);
     return;
   }
@@ -149,14 +161,15 @@ function renderDashboard() {
   $("#admin-dashboard-panel").prop("hidden", !isAdmin());
   const currentHash = window.location.hash;
   const route = currentHash.slice(1);
-  if (!["events", "admin-events", "announcements", "promos", "notifications", "my-registrations", "dashboard", "create-event", "create-announcement", "create-promo"].includes(route)
+  if (!["events", "admin-events", "announcements", "promos", "notifications", "admin-users", "my-registrations", "dashboard", "create-event", "create-announcement", "create-promo"].includes(route)
       && !route.startsWith("event/")
       && !route.startsWith("edit-event/")
       && !route.startsWith("announcement/")
       && !route.startsWith("edit-announcement/")
       && !route.startsWith("promo/")
       && !route.startsWith("edit-promo/")
-      && !route.startsWith("notification/")) {
+      && !route.startsWith("notification/")
+      && !route.startsWith("admin-user/")) {
     window.history.replaceState(null, "", "#dashboard");
   }
   navigateAuthenticatedRoute(window.location.hash.slice(1));
@@ -375,6 +388,9 @@ $(function () {
   $("#notifications-grid, #notification-detail-content").on("click", "[data-delete-notification]", function () {
     deleteNotification($(this).attr("data-delete-notification"));
   });
+  $("#admin-users-grid, #admin-user-detail-content").on("click", "[data-user-action]", function () {
+    changeAdminUserStatus($(this).attr("data-user-id"), $(this).attr("data-user-action"));
+  });
   $("#promo-form-video").on("change", function () {
     const file = this.files[0];
     const videoError = validatePromoVideo(file);
@@ -414,6 +430,7 @@ $(function () {
   $("#retry-announcements").on("click", loadAnnouncements);
   $("#retry-promos").on("click", () => loadPromos(currentPromosPage));
   $("#retry-notifications").on("click", loadNotifications);
+  $("#retry-admin-users").on("click", () => loadAdminUsers(adminUsersPage));
   $("#retry-admin-dashboard").on("click", () => {
     loadAdminDashboard();
     loadNotifications();

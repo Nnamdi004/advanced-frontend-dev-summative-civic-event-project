@@ -40,6 +40,7 @@
           </a>
           <a href="#my-registrations" data-route="my-registrations">My registrations</a>
           <a id="admin-dashboard-nav-link" href="#dashboard" data-route="dashboard" hidden>Dashboard</a>
+          <a id="admin-users-nav-link" href="#admin-users" data-route="admin-users" hidden>Users</a>
           <a id="admin-nav-link" href="#admin-events" data-route="admin-events" hidden>Admin</a>
           <button id="nav-logout-button" class="nav-logout" type="button">Sign out</button>
         </nav>
@@ -267,6 +268,39 @@
           </div>
           <div id="events-grid" class="events-grid" aria-live="polite"></div>
           <nav id="events-pagination" class="pagination" aria-label="Event pages" hidden></nav>
+        </section>
+
+        <section id="admin-users-view" class="app-view" aria-labelledby="admin-users-title" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="form-eyebrow">ADMINISTRATION</p>
+              <h1 id="admin-users-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Manage users</h1>
+              <p class="mt-2 text-slate-600">View account details and manage access. Roles can’t be changed here.</p>
+            </div>
+          </div>
+          <div id="admin-users-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading users…</div>
+          <div id="admin-users-error" class="empty-state error-state" role="alert" hidden>
+            <h2>Users didn’t load</h2>
+            <p id="admin-users-error-message"></p>
+            <button id="retry-admin-users" class="secondary-button retry-button" type="button">Try again</button>
+          </div>
+          <div id="admin-users-empty" class="empty-state" hidden>
+            <h2>No users found</h2>
+            <p>There are no accounts to display on this page.</p>
+          </div>
+          <div id="admin-users-grid" class="admin-users-grid" aria-live="polite"></div>
+          <nav id="admin-users-pagination" class="pagination" aria-label="User pages" hidden></nav>
+        </section>
+
+        <section id="admin-user-detail-view" class="app-view" aria-labelledby="admin-user-detail-title" hidden>
+          <a class="back-link" href="#admin-users"><span aria-hidden="true">←</span> All users</a>
+          <div id="admin-user-detail-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading user profile…</div>
+          <div id="admin-user-detail-error" class="empty-state error-state" role="alert" hidden>
+            <h2>We couldn’t open this profile</h2>
+            <p id="admin-user-detail-error-message"></p>
+            <a class="text-link font-bold" href="#admin-users">Return to users</a>
+          </div>
+          <article id="admin-user-detail-content" class="admin-user-detail" hidden></article>
         </section>
 
         <section id="announcements-view" class="app-view" aria-labelledby="announcements-title" hidden>
@@ -545,6 +579,7 @@
     <script src="js/promos.js"></script>
     <script src="js/notifications.js"></script>
     <script src="js/dashboard.js"></script>
+    <script src="js/users.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>
