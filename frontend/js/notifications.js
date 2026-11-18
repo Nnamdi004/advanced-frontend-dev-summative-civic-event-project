@@ -55,6 +55,7 @@ function updateNotificationUnreadCount() {
     "aria-label",
     unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"
   );
+  updateAdminDashboardUnreadCount(unreadCount);
 }
 
 function fetchNotifications() {
@@ -113,6 +114,7 @@ function loadNotifications() {
   }).catch((error) => {
     $("#notifications-loading").prop("hidden", true);
     if (!authState.token) return;
+    if (isAdmin()) updateAdminDashboardUnreadCount("Unavailable");
     $("#notifications-error-message").text(error.message);
     $("#notifications-error").prop("hidden", false);
   });

@@ -3,8 +3,8 @@
 The frontend is a static HTML, Tailwind CSS, and jQuery application. It connects
 to the Express API and currently implements signup, login, event discovery,
 event details, registrations, event feedback, admin event management, audio
-announcements, promo videos with captions or transcripts, notifications, and a
-user dashboard summary.
+announcements, promo videos with captions or transcripts, notifications, and
+user and admin dashboards.
 
 ## Run locally
 
@@ -73,5 +73,10 @@ events, announcements, or promos when metadata is available. Admins can delete
 notifications. The current API has no mark-as-read endpoint, so opening a
 notification does not change its unread state; the bell reflects the `read`
 value supplied by the backend.
+
+Administrators can view live totals for users, events, registrations, feedback,
+promos, announcements, and notifications on the dashboard. The monthly user
+growth chart uses the admin dashboard endpoint; its unread total reflects
+notifications addressed to the signed-in administrator.
 
 Tailwind CSS and jQuery are loaded from their public CDNs.

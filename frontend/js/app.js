@@ -15,6 +15,7 @@ function showAppView(route) {
     "notification-detail": "notification-detail",
   })[route] || route;
   $(`#${routeView}-view`).prop("hidden", false);
+  $("#admin-dashboard-nav-link").prop("hidden", !isAdmin());
   $("#admin-nav-link").prop("hidden", !isAdmin());
   $("#create-event-link").prop("hidden", !isAdmin() || !["events", "admin-events"].includes(route));
   $("#create-announcement-link").prop("hidden", !isAdmin() || route !== "announcements");
@@ -33,9 +34,13 @@ function showAppView(route) {
   $(`#app-nav a[data-route="${activeRoute}"]`).addClass("active");
 
   if (route === "dashboard") {
-    updateDashboardSummary();
     loadNotifications();
-    if (!eventsLoaded || !registrationsLoaded) {
+    if (isAdmin()) {
+      loadAdminDashboard();
+    } else {
+      updateDashboardSummary();
+    }
+    if (!isAdmin() && (!eventsLoaded || !registrationsLoaded)) {
       Promise.all([
         apiRequest("/api/events"),
         apiRequest("/api/event-registrations/my-registrations"),
@@ -140,6 +145,8 @@ function renderDashboard() {
   $("#dashboard-name").text(user.full_name || "there");
   $("#dashboard-email").text(user.email || "");
   $("#dashboard-role").text(user.role || "user");
+  $("#dashboard-user-cards").prop("hidden", Boolean(isAdmin()));
+  $("#admin-dashboard-panel").prop("hidden", !isAdmin());
   const currentHash = window.location.hash;
   const route = currentHash.slice(1);
   if (!["events", "admin-events", "announcements", "promos", "notifications", "my-registrations", "dashboard", "create-event", "create-announcement", "create-promo"].includes(route)
@@ -407,6 +414,10 @@ $(function () {
   $("#retry-announcements").on("click", loadAnnouncements);
   $("#retry-promos").on("click", () => loadPromos(currentPromosPage));
   $("#retry-notifications").on("click", loadNotifications);
+  $("#retry-admin-dashboard").on("click", () => {
+    loadAdminDashboard();
+    loadNotifications();
+  });
   $("#event-form-image").on("change", function () {
     const file = this.files[0];
     const imageError = validateEventImage(file);

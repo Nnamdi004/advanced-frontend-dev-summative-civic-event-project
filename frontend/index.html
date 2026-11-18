@@ -39,6 +39,7 @@
             <span id="notifications-unread-count" class="notification-count" hidden>0</span>
           </a>
           <a href="#my-registrations" data-route="my-registrations">My registrations</a>
+          <a id="admin-dashboard-nav-link" href="#dashboard" data-route="dashboard" hidden>Dashboard</a>
           <a id="admin-nav-link" href="#admin-events" data-route="admin-events" hidden>Admin</a>
           <button id="nav-logout-button" class="nav-logout" type="button">Sign out</button>
         </nav>
@@ -149,7 +150,7 @@
             <p class="mt-3 max-w-xl text-base leading-7 text-slate-600">Find a reason to get out, meet your neighbors, and make something good happen.</p>
             <a class="primary-button browse-events-button mt-7 inline-flex" href="#events">Explore upcoming events <span aria-hidden="true">→</span></a>
           </div>
-          <div class="dashboard-cards">
+          <div id="dashboard-user-cards" class="dashboard-cards">
             <article class="dashboard-card">
               <span class="dashboard-card-icon" aria-hidden="true">↗</span>
               <p class="dashboard-card-label">UPCOMING EVENTS</p>
@@ -168,6 +169,66 @@
               <p class="mt-2 text-sm text-slate-500">Account type: <span id="dashboard-role" class="font-semibold capitalize"></span></p>
             </article>
           </div>
+          <section id="admin-dashboard-panel" class="admin-dashboard-panel" aria-labelledby="admin-dashboard-title" hidden>
+            <div class="admin-dashboard-heading">
+              <div>
+                <p class="form-eyebrow">ADMIN OVERVIEW</p>
+                <h2 id="admin-dashboard-title" class="font-display mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">Community at a glance</h2>
+                <p class="mt-2 text-slate-600">Live totals from your CivicEvents+ API.</p>
+              </div>
+              <button id="retry-admin-dashboard" class="secondary-button retry-button" type="button">Refresh dashboard</button>
+            </div>
+            <div id="admin-dashboard-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading dashboard statistics…</div>
+            <div id="admin-dashboard-error" class="empty-state error-state" role="alert" hidden>
+              <h3>Dashboard statistics didn’t load</h3>
+              <p id="admin-dashboard-error-message"></p>
+            </div>
+            <div class="admin-dashboard-stats" aria-live="polite">
+              <article class="admin-stat-card">
+                <p class="dashboard-card-label">TOTAL USERS</p>
+                <p id="admin-stat-users" class="dashboard-card-number">—</p>
+                <p id="admin-stat-user-status" class="admin-stat-detail">Active — · Inactive —</p>
+              </article>
+              <article class="admin-stat-card">
+                <p class="dashboard-card-label">EVENTS</p>
+                <p id="admin-stat-events" class="dashboard-card-number">—</p>
+                <p id="admin-stat-event-status" class="admin-stat-detail">Upcoming — · Past —</p>
+              </article>
+              <article class="admin-stat-card">
+                <p class="dashboard-card-label">REGISTRATIONS</p>
+                <p id="admin-stat-registrations" class="dashboard-card-number">—</p>
+                <p class="admin-stat-detail">All-time event sign-ups</p>
+              </article>
+              <article class="admin-stat-card">
+                <p class="dashboard-card-label">FEEDBACK</p>
+                <p id="admin-stat-feedback" class="dashboard-card-number">—</p>
+                <p class="admin-stat-detail">Responses from attendees</p>
+              </article>
+              <article class="admin-stat-card">
+                <p class="dashboard-card-label">PROMOS</p>
+                <p id="admin-stat-promos" class="dashboard-card-number">—</p>
+                <p class="admin-stat-detail">Video stories</p>
+              </article>
+              <article class="admin-stat-card">
+                <p class="dashboard-card-label">ANNOUNCEMENTS</p>
+                <p id="admin-stat-announcements" class="dashboard-card-number">—</p>
+                <p class="admin-stat-detail">Audio updates</p>
+              </article>
+              <article class="admin-stat-card">
+                <p class="dashboard-card-label">ALL NOTIFICATIONS</p>
+                <p id="admin-stat-notifications" class="dashboard-card-number">—</p>
+                <p class="admin-stat-detail">Unread for you: <span id="admin-stat-unread-notifications">—</span></p>
+              </article>
+            </div>
+            <section class="admin-growth-panel" aria-labelledby="admin-growth-title">
+              <div>
+                <p class="form-eyebrow">COMMUNITY GROWTH</p>
+                <h3 id="admin-growth-title" class="font-display mt-2 text-xl font-extrabold">New users over the last six months</h3>
+              </div>
+              <div id="admin-growth-empty" class="admin-growth-empty" hidden>No new users were recorded in this period.</div>
+              <div id="admin-growth-chart" class="admin-growth-chart" role="list" aria-label="Monthly new user counts"></div>
+            </section>
+          </section>
         </section>
 
         <section id="events-view" class="app-view" aria-labelledby="events-title" hidden>
@@ -483,6 +544,7 @@
     <script src="js/announcements.js"></script>
     <script src="js/promos.js"></script>
     <script src="js/notifications.js"></script>
+    <script src="js/dashboard.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>
