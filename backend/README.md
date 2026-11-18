@@ -65,7 +65,11 @@ Before setting up, make sure you have the following installed:
     export DB_PORT=<db_port>
     ```
 
-- Run the command `psql -U $DB_USER -d $DB_NAME -h $DB_HOST -p $DB_PORT -f ./migrations/001_create_tables.sql` to create the necessary tables in your database
+- For a new database, run both migration files in order:
+  `psql -U $DB_USER -d $DB_NAME -h $DB_HOST -p $DB_PORT -f ./migrations/001_create_tables.sql`
+  followed by
+  `psql -U $DB_USER -d $DB_NAME -h $DB_HOST -p $DB_PORT -f ./migrations/002_user_notification_reads.sql`.
+- When upgrading an existing database that already ran migration `001`, apply migration `002` to add per-user notification read state.
 
 - Configure the Environment Variables: Change the values in the `.env` file with the approapriate database credentials
 

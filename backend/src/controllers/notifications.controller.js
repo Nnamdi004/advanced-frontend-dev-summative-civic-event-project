@@ -50,7 +50,7 @@ export const list = async (req, res, next) => {
 export const get = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const notification = await Notifications.findById(id);
+        const notification = await Notifications.findByIdForUser(id, req.user.id);
 
         if (!notification) {
             return res.status(404).json({
@@ -62,6 +62,26 @@ export const get = async (req, res, next) => {
         return res.status(200).json({
             status: 200,
             message: 'Notification fetched successfully',
+            data: notification
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const markAsRead = async (req, res, next) => {
+    try {
+        const notification = await Notifications.markAsRead(req.params.id, req.user.id);
+        if (!notification) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Notification not found'
+            });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            message: 'Notification marked as read',
             data: notification
         });
     } catch (err) {

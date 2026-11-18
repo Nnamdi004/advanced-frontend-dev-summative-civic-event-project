@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Authenticated users
 router.get('/', authenticate, controller.list);
+router.patch('/:id/read', authenticate, controller.markAsRead);
 router.get('/:id', authenticate, controller.get);
 
 // Delete notification (admin only)

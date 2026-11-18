@@ -81,9 +81,13 @@ export const getUserStats = async (userId) => {
     const notifications = await db.query(`
         SELECT 
             COUNT(*) AS total_notifications,
-            COUNT(*) FILTER (WHERE read = false) AS unread_notifications
+            COUNT(*) FILTER (
+                WHERE notifications.read = false AND user_reads.notification_id IS NULL
+            ) AS unread_notifications
         FROM notifications
-        WHERE recipient_id = $1 OR recipient_id IS NULL
+        LEFT JOIN user_notification_reads user_reads
+          ON user_reads.notification_id = notifications.id AND user_reads.user_id = $1
+        WHERE notifications.recipient_id = $1 OR notifications.recipient_id IS NULL
     `, [userId]);
     stats.notifications = notifications.rows[0];
 

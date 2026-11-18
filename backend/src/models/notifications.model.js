@@ -28,13 +28,41 @@ export const create = async ({ title, message, type, recipient_id = null, metada
  */
 export const findAllForUser = async (userId = null) => {
     const res = await db.query(
-        `SELECT *
-         FROM notifications
-         WHERE recipient_id IS NULL OR recipient_id = $1
-         ORDER BY created_at DESC`,
+        `SELECT n.*,
+                (n.read OR user_reads.notification_id IS NOT NULL) AS read
+         FROM notifications n
+         LEFT JOIN user_notification_reads user_reads
+           ON user_reads.notification_id = n.id AND user_reads.user_id = $1
+         WHERE n.recipient_id IS NULL OR n.recipient_id = $1
+         ORDER BY n.created_at DESC`,
         [userId]
     );
     return res.rows;
+};
+
+export const findByIdForUser = async (id, userId) => {
+    const res = await db.query(
+        `SELECT n.*,
+                (n.read OR user_reads.notification_id IS NOT NULL) AS read
+         FROM notifications n
+         LEFT JOIN user_notification_reads user_reads
+           ON user_reads.notification_id = n.id AND user_reads.user_id = $2
+         WHERE n.id = $1 AND (n.recipient_id IS NULL OR n.recipient_id = $2)`,
+        [id, userId]
+    );
+    return res.rows[0] || null;
+};
+
+export const markAsRead = async (id, userId) => {
+    await db.query(
+        `INSERT INTO user_notification_reads (notification_id, user_id)
+         SELECT id, $2
+         FROM notifications
+         WHERE id = $1 AND (recipient_id IS NULL OR recipient_id = $2)
+         ON CONFLICT (notification_id, user_id) DO NOTHING`,
+        [id, userId]
+    );
+    return findByIdForUser(id, userId);
 };
 
 /**
