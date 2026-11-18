@@ -47,6 +47,8 @@ function notificationRelatedResource(notification) {
   return null;
 }
 
+let notificationFilter = "all";
+
 function updateNotificationUnreadCount() {
   const unreadCount = notifications.filter(notificationIsUnread).length;
   const $count = $("#notifications-unread-count");
@@ -94,14 +96,37 @@ function makeNotificationCard(notification) {
   $("<a>").addClass("secondary-button notification-open-button")
     .attr("href", `#notification/${escapePathSegment(notification.id)}`)
     .text("View details").appendTo($actions);
+  if (unread) makeNotificationMarkReadAction(notification.id, $actions);
   if (isAdmin()) makeNotificationAdminActions(notification.id, $actions);
   return $card;
 }
 
+function makeNotificationMarkReadAction(notificationId, $container) {
+  $("<button>").attr({
+    type: "button",
+    "data-mark-notification-read": notificationId,
+  }).addClass("secondary-button notification-mark-read-button").text("Mark as read").appendTo($container);
+}
+
 function renderNotifications() {
   const $grid = $("#notifications-grid").empty();
-  notifications.forEach((notification) => $grid.append(makeNotificationCard(notification)));
-  $("#notifications-empty").prop("hidden", notifications.length > 0);
+  const search = $("#notification-search").val().trim().toLowerCase();
+  const filteredNotifications = notifications.filter((notification) => {
+    const unread = notificationIsUnread(notification);
+    const matchesStatus = notificationFilter === "all"
+      || (notificationFilter === "unread" ? unread : !unread);
+    const searchableText = `${notification.title || ""} ${notification.message || ""} ${notification.type || ""}`
+      .toLowerCase();
+    return matchesStatus && searchableText.includes(search);
+  });
+  filteredNotifications.forEach((notification) => $grid.append(makeNotificationCard(notification)));
+  $("#notifications-empty").prop("hidden", filteredNotifications.length > 0);
+  $("#notifications-empty-title").text(notifications.length === 0 ? "You’re all caught up" : "No notifications found");
+  $("#notifications-empty-message").text(
+    notifications.length === 0
+      ? "New community updates will appear here."
+      : "Try another search or filter to find a notification."
+  );
 }
 
 function loadNotifications() {
@@ -126,6 +151,33 @@ function notificationBelongsToCurrentUser(notification) {
       && String(notification.recipient_id) === String(authState.user && authState.user.id));
 }
 
+function markNotificationAsRead(notificationId) {
+  const notification = notifications.find((item) => String(item.id) === String(notificationId));
+  if (!notification || !notificationIsUnread(notification)) return;
+
+  const $button = $(`[data-mark-notification-read="${String(notificationId)}"]`);
+  $button.prop("disabled", true).text("Marking…");
+  apiRequest(`/api/notifications/${escapePathSegment(notificationId)}/read`, {
+    method: "PATCH",
+  }).then((response) => {
+    if (!response.data || String(response.data.id) !== String(notificationId) || notificationIsUnread(response.data)) {
+      throw new Error("The API did not confirm that the notification was marked as read.");
+    }
+    const index = notifications.findIndex((item) => String(item.id) === String(notificationId));
+    if (index !== -1) notifications[index] = response.data;
+    updateNotificationUnreadCount();
+    if (currentRoute === "notification-detail" && String(currentNotificationId) === String(notificationId)) {
+      renderNotificationDetail(response.data);
+    } else {
+      renderNotifications();
+    }
+    showToast(response.message || "Notification marked as read.");
+  }).catch((error) => {
+    $button.prop("disabled", false).text("Mark as read");
+    showToast(error.message, true);
+  });
+}
+
 function renderNotificationDetail(notification) {
   const $content = $("#notification-detail-content").empty();
   const $body = $("<div>").addClass("notification-detail-body").appendTo($content);
@@ -144,6 +196,9 @@ function renderNotificationDetail(notification) {
   if (relatedResource) {
     $("<a>").addClass("primary-button notification-related-link")
       .attr("href", relatedResource.href).text(relatedResource.label).appendTo($body);
+  }
+  if (notificationIsUnread(notification)) {
+    makeNotificationMarkReadAction(notification.id, $("<div>").addClass("notification-detail-actions").appendTo($body));
   }
   if (isAdmin()) {
     makeNotificationAdminActions(notification.id, $("<div>").addClass("notification-detail-actions").appendTo($body));

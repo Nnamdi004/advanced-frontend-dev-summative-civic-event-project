@@ -69,10 +69,10 @@ text is displayed as a transcript.
 
 The notification inbox loads broadcast and user-targeted notifications, shows
 the unread count in the navigation bell, and links notifications to related
-events, announcements, or promos when metadata is available. Admins can delete
-notifications. The current API has no mark-as-read endpoint, so opening a
-notification does not change its unread state; the bell reflects the `read`
-value supplied by the backend.
+events, announcements, or promos when metadata is available. Search and status
+filters help find updates, and users can mark an individual notification as
+read through `PATCH /api/notifications/:id/read`. Read state for broadcast
+notifications is stored per user. Admins can also delete notifications.
 
 Administrators can view live totals for users, events, registrations, feedback,
 promos, announcements, and notifications on the dashboard. The monthly user

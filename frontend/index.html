@@ -484,7 +484,18 @@
               <p class="form-eyebrow">KEEP IN THE LOOP</p>
               <h1 id="notifications-title" class="font-display mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Notifications</h1>
               <p class="mt-2 text-slate-600">Updates about events and stories from your community.</p>
-              <p class="notification-read-note">Opening a notification doesn’t mark it as read yet.</p>
+              <p class="notification-read-note">Search updates, filter by read status, and keep your inbox up to date.</p>
+            </div>
+          </div>
+          <div class="notification-toolbar">
+            <label class="filter-field notification-search" for="notification-search">
+              <span>Search notifications</span>
+              <input id="notification-search" type="search" placeholder="Search titles and messages">
+            </label>
+            <div class="notification-filters" role="group" aria-label="Filter notifications">
+              <button class="notification-filter is-active" type="button" data-notification-filter="all" aria-pressed="true">All</button>
+              <button class="notification-filter" type="button" data-notification-filter="unread" aria-pressed="false">Unread</button>
+              <button class="notification-filter" type="button" data-notification-filter="read" aria-pressed="false">Read</button>
             </div>
           </div>
           <div id="notifications-loading" class="loading-state" role="status" hidden><span class="loading-spinner" aria-hidden="true"></span>Loading notifications…</div>
@@ -495,8 +506,8 @@
           </div>
           <div id="notifications-empty" class="empty-state" hidden>
             <span class="empty-icon" aria-hidden="true">✦</span>
-            <h2>You’re all caught up</h2>
-            <p>New community updates will appear here.</p>
+            <h2 id="notifications-empty-title">You’re all caught up</h2>
+            <p id="notifications-empty-message">New community updates will appear here.</p>
           </div>
           <div id="notifications-grid" class="notifications-grid" aria-live="polite"></div>
         </section>

@@ -384,6 +384,9 @@ $(function () {
   $("#notifications-grid, #notification-detail-content").on("click", "[data-delete-notification]", function () {
     deleteNotification($(this).attr("data-delete-notification"));
   });
+  $("#notifications-grid, #notification-detail-content").on("click", "[data-mark-notification-read]", function () {
+    markNotificationAsRead($(this).attr("data-mark-notification-read"));
+  });
   $("#admin-users-grid, #admin-user-detail-content").on("click", "[data-user-action]", function () {
     changeAdminUserStatus($(this).attr("data-user-id"), $(this).attr("data-user-action"));
   });
@@ -426,6 +429,13 @@ $(function () {
   $("#retry-announcements").on("click", loadAnnouncements);
   $("#retry-promos").on("click", () => loadPromos(currentPromosPage));
   $("#retry-notifications").on("click", loadNotifications);
+  $("#notification-search").on("input", renderNotifications);
+  $(".notification-filter").on("click", function () {
+    notificationFilter = $(this).attr("data-notification-filter");
+    $(".notification-filter").removeClass("is-active").attr("aria-pressed", "false");
+    $(this).addClass("is-active").attr("aria-pressed", "true");
+    renderNotifications();
+  });
   $("#retry-admin-users").on("click", () => loadAdminUsers(adminUsersPage));
   $("#retry-admin-dashboard").on("click", () => {
     loadAdminDashboard();
