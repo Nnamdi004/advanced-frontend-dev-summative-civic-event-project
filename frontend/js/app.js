@@ -42,19 +42,15 @@ function showAppView(route) {
       loadAdminDashboard();
     } else {
       updateDashboardSummary();
+      loadUserDashboard();
     }
-    if (!isAdmin() && (!eventsLoaded || !registrationsLoaded)) {
-      Promise.all([
-        apiRequest("/api/events"),
-        apiRequest("/api/event-registrations/my-registrations"),
-      ]).then(([eventResponse, registrationResponse]) => {
+    if (!isAdmin() && !eventsLoaded) {
+      apiRequest("/api/events").then((eventResponse) => {
         events = Array.isArray(eventResponse.data) ? eventResponse.data : [];
-        registrations = Array.isArray(registrationResponse.data) ? registrationResponse.data : [];
         eventsLoaded = true;
-        registrationsLoaded = true;
         updateDashboardSummary();
       }).catch(() => {
-        $("#dashboard-event-count, #dashboard-registration-count").text("—");
+        $("#dashboard-event-count").text("—");
       });
     }
   } else if (route === "events" || route === "admin-events") {
@@ -435,6 +431,7 @@ $(function () {
     loadAdminDashboard();
     loadNotifications();
   });
+  $("#retry-user-dashboard").on("click", loadUserDashboard);
   $("#event-form-image").on("change", function () {
     const file = this.files[0];
     const imageError = validateEventImage(file);

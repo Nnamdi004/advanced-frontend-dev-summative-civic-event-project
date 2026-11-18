@@ -79,6 +79,11 @@ promos, announcements, and notifications on the dashboard. The monthly user
 growth chart uses the admin dashboard endpoint; its unread total reflects
 notifications addressed to the signed-in administrator.
 
+Regular users can view a live personal dashboard summary. It uses
+`GET /api/dashboard/me` for registration, feedback, unread notification,
+announcement, and promo totals, while the upcoming-event card is populated
+from the published event list.
+
 Admins can also browse users, open a read-only account profile, and enable or
 disable access. The UI intentionally exposes no role-editing control. The users
 API returns a plain paginated array rather than page totals, so the interface

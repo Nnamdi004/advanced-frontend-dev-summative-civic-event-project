@@ -84,3 +84,31 @@ function loadAdminDashboard() {
     $("#admin-dashboard-error").prop("hidden", false);
   });
 }
+
+function renderUserDashboard(data) {
+  if (!data
+      || !data.registrations
+      || !data.feedbacks
+      || !data.notifications
+      || !data.announcements
+      || !data.promos) {
+    throw new Error("The API returned incomplete dashboard statistics.");
+  }
+
+  $("#dashboard-registration-count").text(formatDashboardCount(data.registrations.total_registered_events));
+  $("#dashboard-feedback-count").text(formatDashboardCount(data.feedbacks.total_feedbacks));
+  $("#dashboard-announcement-count").text(formatDashboardCount(data.announcements.total_announcements));
+  $("#dashboard-promo-count").text(formatDashboardCount(data.promos.total_promos));
+  $("#dashboard-notification-count").text(formatDashboardCount(data.notifications.unread_notifications));
+}
+
+function loadUserDashboard() {
+  $("#dashboard-user-error").prop("hidden", true);
+  return apiRequest("/api/dashboard/me").then((response) => {
+    renderUserDashboard(response.data);
+  }).catch((error) => {
+    if (!authState.token) return;
+    $("#dashboard-user-error-message").text(error.message);
+    $("#dashboard-user-error").prop("hidden", false);
+  });
+}
