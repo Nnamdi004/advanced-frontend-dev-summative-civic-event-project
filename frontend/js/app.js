@@ -19,6 +19,19 @@ function showAppView(route) {
   $("#admin-dashboard-nav-link").prop("hidden", !isAdmin());
   $("#admin-users-nav-link").prop("hidden", !isAdmin());
   $("#admin-nav-link").prop("hidden", !isAdmin());
+  const showAdminSidebar = isAdmin() && [
+    "dashboard", "admin-users", "admin-user-detail", "admin-events",
+    "event-form", "announcement-form", "promo-form"
+  ].includes(route);
+  $("#admin-sidebar").prop("hidden", !showAdminSidebar);
+  $("#app-main").toggleClass("has-admin-sidebar", showAdminSidebar);
+  $("#admin-sidebar a").removeClass("active");
+  const sidebarRoute = route === "admin-user-detail"
+    ? "admin-users"
+    : route === "event-form"
+      ? "admin-events"
+      : route;
+  $(`#admin-sidebar a[data-admin-sidebar-route="${sidebarRoute}"]`).addClass("active");
   $("#create-event-link").prop("hidden", !isAdmin() || !["events", "admin-events"].includes(route));
   $("#create-announcement-link").prop("hidden", !isAdmin() || route !== "announcements");
   $("#create-promo-link").prop("hidden", !isAdmin() || route !== "promos");
@@ -153,6 +166,11 @@ function renderDashboard() {
   $("#dashboard-name").text(user.full_name || "there");
   $("#dashboard-email").text(user.email || "");
   $("#dashboard-role").text(user.role || "user");
+  $("#profile-name").text(user.full_name || "Account");
+  $("#profile-role").text(user.role || "Member");
+  $("#profile-avatar").text((user.full_name || "C").trim().charAt(0).toUpperCase());
+  $("#profile-dashboard-link").prop("hidden", false);
+  $("#profile-admin-link").prop("hidden", !isAdmin());
   $("#dashboard-user-cards").prop("hidden", Boolean(isAdmin()));
   $("#admin-dashboard-panel").prop("hidden", !isAdmin());
   const currentHash = window.location.hash;
@@ -239,6 +257,40 @@ function checkRestoredSession() {
 
 $(function () {
   $("#current-year").text(new Date().getFullYear());
+
+  $("#global-search-form").on("submit", function (event) {
+    event.preventDefault();
+    const query = $("#global-search-input").val().trim();
+    window.history.replaceState(null, "", "#events");
+    navigateAuthenticatedRoute("events");
+    $("#event-search").val(query).trigger("input");
+  });
+
+  $("#profile-menu-button").on("click", function (event) {
+    event.stopPropagation();
+    const open = $("#profile-dropdown").prop("hidden");
+    $("#profile-dropdown").prop("hidden", !open);
+    $(this).attr("aria-expanded", open ? "true" : "false");
+  });
+
+  $(document).on("click", function (event) {
+    if (!$(event.target).closest(".profile-menu").length) {
+      $("#profile-dropdown").prop("hidden", true);
+      $("#profile-menu-button").attr("aria-expanded", "false");
+    }
+  });
+
+  $("#notifications-nav-link").on("click", openNotificationDrawer);
+  $("#notification-drawer-close, #notification-drawer-backdrop").on("click", closeNotificationDrawer);
+  $("#notification-drawer-view-all").on("click", closeNotificationDrawer);
+  $("#notification-drawer-list").on("click", ".notification-drawer-item", closeNotificationDrawer);
+  $(document).on("keydown", function (event) {
+    if (event.key === "Escape") {
+      closeNotificationDrawer();
+      $("#profile-dropdown").prop("hidden", true);
+      $("#profile-menu-button").attr("aria-expanded", "false");
+    }
+  });
 
   $("#login-form").on("submit", function (event) {
     event.preventDefault();
@@ -484,6 +536,12 @@ $(function () {
     updateNotificationUnreadCount();
     $("#auth-main").prop("hidden", false);
     $("#app-main, #app-nav").prop("hidden", true);
+    $("#app-main").removeClass("has-admin-sidebar");
+    $("#admin-sidebar").prop("hidden", true);
+    $("#profile-dropdown").prop("hidden", true);
+    $("#profile-menu-button").attr("aria-expanded", "false");
+    $("#notification-drawer, #notification-drawer-backdrop").prop("hidden", true);
+    $("#notifications-nav-link").attr("aria-expanded", "false");
     $("#header-note").prop("hidden", false);
     showView("login");
     $("#login-password").val("").trigger("focus");

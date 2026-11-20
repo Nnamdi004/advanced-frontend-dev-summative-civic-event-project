@@ -49,6 +49,51 @@ function notificationRelatedResource(notification) {
 
 let notificationFilter = "all";
 
+function openNotificationDrawer() {
+  if (!authState.token) return;
+  $("#notification-drawer, #notification-drawer-backdrop").prop("hidden", false);
+  $("#notifications-nav-link").attr("aria-expanded", "true");
+  $("#notification-drawer-close").trigger("focus");
+  renderNotificationDrawer();
+  $("#notification-drawer-loading").prop("hidden", false);
+  fetchNotifications().then(() => {
+    $("#notification-drawer-loading").prop("hidden", true);
+    renderNotificationDrawer();
+  }).catch((error) => {
+    $("#notification-drawer-loading").prop("hidden", true);
+    $("#notification-drawer-empty").empty()
+      .append($("<strong>").text(error.message))
+      .prop("hidden", false);
+  });
+}
+
+function closeNotificationDrawer() {
+  $("#notification-drawer, #notification-drawer-backdrop").prop("hidden", true);
+  $("#notifications-nav-link").attr("aria-expanded", "false").trigger("focus");
+}
+
+function renderNotificationDrawer() {
+  const $list = $("#notification-drawer-list").empty();
+  const recentNotifications = notifications.slice(0, 6);
+  $("#notification-drawer-empty").prop("hidden", recentNotifications.length > 0);
+  if (recentNotifications.length === 0) {
+    $("#notification-drawer-empty")
+      .empty()
+      .append($("<span>").attr("aria-hidden", "true").text("✓"))
+      .append($("<strong>").text("You’re all caught up"));
+  }
+  recentNotifications.forEach((notification) => {
+    const unread = notificationIsUnread(notification);
+    const $item = $("<a>")
+      .addClass(`notification-drawer-item${unread ? " is-unread" : ""}`)
+      .attr("href", `#notification/${escapePathSegment(notification.id)}`)
+      .appendTo($list);
+    $("<strong>").text(notification.title || "Notification").appendTo($item);
+    $("<small>").text(notificationDateTime(notification.created_at)).appendTo($item);
+    $("<p>").text(notification.message || "Open notification for details.").appendTo($item);
+  });
+}
+
 function updateNotificationUnreadCount() {
   const unreadCount = notifications.filter(notificationIsUnread).length;
   const $count = $("#notifications-unread-count");
@@ -166,6 +211,7 @@ function markNotificationAsRead(notificationId) {
     const index = notifications.findIndex((item) => String(item.id) === String(notificationId));
     if (index !== -1) notifications[index] = response.data;
     updateNotificationUnreadCount();
+    renderNotificationDrawer();
     if (currentRoute === "notification-detail" && String(currentNotificationId) === String(notificationId)) {
       renderNotificationDetail(response.data);
     } else {

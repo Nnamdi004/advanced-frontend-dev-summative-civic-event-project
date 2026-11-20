@@ -28,23 +28,63 @@
           Your community, in motion
         </div>
         <nav id="app-nav" class="app-nav" aria-label="Main navigation" hidden>
+          <form id="global-search-form" class="global-search" role="search">
+            <label class="sr-only" for="global-search-input">Search civic events</label>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/>
+              <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <input id="global-search-input" type="search" placeholder="Search events" autocomplete="off">
+          </form>
           <a href="#events" data-route="events">Events</a>
           <a href="#announcements" data-route="announcements">Announcements</a>
           <a href="#promos" data-route="promos">Promos</a>
-          <a id="notifications-nav-link" class="notification-nav-link" href="#notifications" data-route="notifications" aria-label="Notifications">
+          <button id="notifications-nav-link" class="notification-nav-link" type="button" aria-label="Notifications" aria-haspopup="dialog" aria-expanded="false" aria-controls="notification-drawer">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span>Notifications</span>
             <span id="notifications-unread-count" class="notification-count" hidden>0</span>
-          </a>
+          </button>
           <a href="#my-registrations" data-route="my-registrations">My registrations</a>
           <a id="admin-dashboard-nav-link" href="#dashboard" data-route="dashboard" hidden>Dashboard</a>
           <a id="admin-users-nav-link" href="#admin-users" data-route="admin-users" hidden>Users</a>
           <a id="admin-nav-link" href="#admin-events" data-route="admin-events" hidden>Admin</a>
-          <button id="nav-logout-button" class="nav-logout" type="button">Sign out</button>
+          <div class="profile-menu">
+            <button id="profile-menu-button" class="profile-menu-button" type="button" aria-haspopup="menu" aria-expanded="false">
+              <span id="profile-avatar" class="profile-avatar" aria-hidden="true">C</span>
+              <span class="profile-copy">
+                <strong id="profile-name">Account</strong>
+                <small id="profile-role">Member</small>
+              </span>
+              <span aria-hidden="true">⌄</span>
+            </button>
+            <div id="profile-dropdown" class="profile-dropdown" role="menu" hidden>
+              <a href="#dashboard" role="menuitem" data-profile-route="dashboard">Profile</a>
+              <a id="profile-dashboard-link" href="#dashboard" role="menuitem" hidden>Dashboard</a>
+              <a id="profile-admin-link" href="#admin-events" role="menuitem" hidden>Admin</a>
+              <button id="nav-logout-button" class="nav-logout" type="button" role="menuitem">Sign out</button>
+            </div>
+          </div>
         </nav>
       </header>
+      <div id="notification-drawer-backdrop" class="notification-drawer-backdrop" hidden></div>
+      <aside id="notification-drawer" class="notification-drawer" role="dialog" aria-modal="true" aria-labelledby="notification-drawer-title" hidden>
+        <div class="notification-drawer-header">
+          <div>
+            <p class="form-eyebrow">YOUR UPDATES</p>
+            <h2 id="notification-drawer-title" class="font-display">Notifications</h2>
+          </div>
+          <button id="notification-drawer-close" class="icon-button" type="button" aria-label="Close notifications">×</button>
+        </div>
+        <div id="notification-drawer-loading" class="notification-drawer-loading" role="status" hidden>Loading notifications…</div>
+        <div id="notification-drawer-list" class="notification-drawer-list"></div>
+        <div id="notification-drawer-empty" class="notification-drawer-empty" hidden>
+          <span aria-hidden="true">✓</span>
+          <strong>You’re all caught up</strong>
+        </div>
+        <a id="notification-drawer-view-all" class="notification-drawer-view-all" href="#notifications">View all notifications</a>
+      </aside>
 
       <main id="auth-main" class="mx-auto grid min-h-[calc(100vh-160px)] max-w-7xl grid-cols-1 items-center gap-12 px-5 pb-12 pt-5 sm:px-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-20 lg:px-16">
         <section class="intro-panel order-2 py-4 lg:order-1 lg:py-12" aria-labelledby="intro-heading">
@@ -144,6 +184,16 @@
       </main>
 
       <main id="app-main" class="app-main" hidden>
+        <aside id="admin-sidebar" class="admin-sidebar" aria-label="Admin dashboard navigation" hidden>
+          <p class="admin-sidebar-label">MANAGEMENT</p>
+          <nav>
+            <a href="#dashboard" data-admin-sidebar-route="dashboard"><span aria-hidden="true">⌂</span> Overview</a>
+            <a href="#admin-events" data-admin-sidebar-route="admin-events"><span aria-hidden="true">▦</span> Events</a>
+            <a href="#admin-users" data-admin-sidebar-route="admin-users"><span aria-hidden="true">◎</span> Users</a>
+            <a href="#announcements" data-admin-sidebar-route="announcements"><span aria-hidden="true">♪</span> Announcements</a>
+            <a href="#promos" data-admin-sidebar-route="promos"><span aria-hidden="true">▶</span> Promos</a>
+          </nav>
+        </aside>
         <section id="dashboard-view" class="app-view" aria-labelledby="dashboard-title">
           <div class="dashboard-hero">
             <p class="form-eyebrow">YOUR CIVIC HOME</p>
@@ -607,7 +657,11 @@
 
       <footer class="site-footer flex flex-col items-center justify-between gap-2 px-5 py-5 text-xs text-slate-500 sm:flex-row sm:px-10 lg:px-16">
         <span>© <span id="current-year"></span> CivicEvents+. Made for the places we call home.</span>
-        <a href="mailto:hello@civicevents.example" class="footer-link">Need a hand? Contact us</a>
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="mailto:hello@civicevents.example" class="footer-link">Contact</a>
+          <a href="#announcements" class="footer-link">Community updates</a>
+          <a href="#events" class="footer-link">Help &amp; events</a>
+        </nav>
       </footer>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
