@@ -66,6 +66,8 @@ function showAppView(route) {
         $("#dashboard-event-count").text("—");
       });
     }
+  } else if (route === "profile") {
+    loadMyProfile();
   } else if (route === "events" || route === "admin-events") {
     loadEvents();
   } else if (route === "announcements") {
@@ -154,7 +156,7 @@ function navigateAuthenticatedRoute(route) {
     loadPromoForm(decodePathSegment(route.slice("edit-promo/".length)));
     return;
   }
-  if (["events", "admin-events", "announcements", "promos", "notifications", "admin-users", "my-registrations"].includes(route)) {
+  if (["profile", "events", "admin-events", "announcements", "promos", "notifications", "admin-users", "my-registrations"].includes(route)) {
     showAppView(route);
     return;
   }
@@ -175,7 +177,7 @@ function renderDashboard() {
   $("#admin-dashboard-panel").prop("hidden", !isAdmin());
   const currentHash = window.location.hash;
   const route = currentHash.slice(1);
-  if (!["events", "admin-events", "announcements", "promos", "notifications", "admin-users", "my-registrations", "dashboard", "create-event", "create-announcement", "create-promo"].includes(route)
+  if (!["profile", "events", "admin-events", "announcements", "promos", "notifications", "admin-users", "my-registrations", "dashboard", "create-event", "create-announcement", "create-promo"].includes(route)
       && !route.startsWith("event/")
       && !route.startsWith("edit-event/")
       && !route.startsWith("announcement/")
@@ -238,6 +240,7 @@ function checkRestoredSession() {
       full_name: user.full_name,
       email: user.email,
       role: user.role,
+      is_active: user.is_active,
     };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(authState));
     renderDashboard();
@@ -370,11 +373,23 @@ $(function () {
   $("#events-grid").on("click", "[data-delete-event]", function () {
     deleteEvent($(this).attr("data-delete-event"));
   });
+  $("#events-grid").on("click", "[data-event-toggle]", function () {
+    toggleEventPublication(
+      $(this).attr("data-event-toggle"),
+      $(this).attr("data-publish-action")
+    );
+  });
   $("#event-detail-content").on("click", "[data-event-action]", function () {
     changeRegistration($(this).attr("data-event-id"), $(this).attr("data-event-action"), $(this));
   });
   $("#event-detail-content").on("click", "[data-delete-event]", function () {
     deleteEvent($(this).attr("data-delete-event"));
+  });
+  $("#event-detail-content").on("click", "[data-event-toggle]", function () {
+    toggleEventPublication(
+      $(this).attr("data-event-toggle"),
+      $(this).attr("data-publish-action")
+    );
   });
   $("#event-detail-content").on("click", "[data-retry-feedback]", function () {
     loadEventFeedback($(this).attr("data-retry-feedback"));
@@ -508,6 +523,7 @@ $(function () {
     setEventImagePreview(file ? URL.createObjectURL(file) : existingEventImageUrl, file ? file.name : "Current event image");
   });
   $("#event-form").on("submit", saveEventForm);
+  $("#profile-form").on("submit", saveMyProfile);
   $("#nav-logout-button").on("click", () => {
     clearSession();
     events = [];

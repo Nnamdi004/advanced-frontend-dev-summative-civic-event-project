@@ -48,10 +48,10 @@ This follows the current API permissions: `GET /api/event-feedback/event/:id`
 is admin-only, while users can retrieve their own feedback from
 `/api/event-feedback/my-feedback`.
 
-Administrators can create, edit, and delete events. Event images are uploaded
-as multipart form data and validated against the API's JPG/PNG/GIF and 2 MB
-limits. The current backend creates events as published by default and does not
-support changing publication state from its event routes.
+Administrators can create, edit, publish/unpublish, and delete events. Event
+images are uploaded as multipart form data and validated against the API's
+JPG/PNG/GIF and 2 MB limits. Events are published by default and admins can
+change the published state from the event form or list.
 
 Announcements are listed from the API, with unpublished items hidden from
 regular users. Admins can upload audio when creating an announcement, update

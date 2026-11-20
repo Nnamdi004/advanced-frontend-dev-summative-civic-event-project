@@ -4,9 +4,6 @@ function eventActionButton(eventId) {
   if (isRegistered(eventId)) {
     return $button.addClass("cancel-registration").attr("data-event-action", "cancel").text("Cancel registration");
   }
-  if (hasCancelledRegistration(eventId)) {
-    return $button.addClass("cancelled-registration").prop("disabled", true).text("Registration canceled");
-  }
   return $button.addClass("register-event").attr("data-event-action", "register").text("Register");
 }
 
@@ -29,6 +26,9 @@ function makeEventCard(event, registration = null) {
   const $body = $("<div>").addClass("event-card-body").appendTo($card);
   const $meta = $("<div>").addClass("event-card-meta").appendTo($body);
   $("<span>").addClass("event-date-label").text(eventDateTime(event.starts_at)).appendTo($meta);
+  if (isAdmin() && event.published !== true) {
+    $("<span>").addClass("status-pill cancelled-pill").text("Unpublished").appendTo($meta);
+  }
   if (registration && registration.status === "cancelled") {
     $("<span>").addClass("status-pill cancelled-pill").text("Canceled").appendTo($meta);
   } else if (registration && registration.status === "registered") {
@@ -52,6 +52,13 @@ function makeEventCard(event, registration = null) {
     $("<a>").addClass("event-edit-button")
       .attr("href", `#edit-event/${escapePathSegment(eventId)}`)
       .text("Edit").appendTo($actions);
+    $("<button>").attr({
+      type: "button",
+      "data-event-toggle": eventId,
+      "data-publish-action": event.published === true ? "unpublish" : "publish",
+    }).addClass("announcement-publish-button")
+      .text(event.published === true ? "Unpublish" : "Publish")
+      .appendTo($actions);
     $("<button>").attr({
       type: "button",
       "data-delete-event": eventId,
@@ -190,6 +197,7 @@ function loadEventForm(eventId = null) {
   $("#event-form-title").text(eventId ? "Edit event" : "Create event");
   $("#event-form-submit .event-form-button-label").text(eventId ? "Save changes" : "Create event");
   $("#event-form-image").val("");
+  $("#event-form-published").prop("checked", true);
   setEventImagePreview("", "");
 
   if (!eventId) return;
@@ -207,6 +215,7 @@ function loadEventForm(eventId = null) {
     $("#event-form-location").val(event.location || "");
     $("#event-form-start").val(dateTimeInputValue(event.starts_at));
     $("#event-form-end").val(dateTimeInputValue(event.ends_at));
+    $("#event-form-published").prop("checked", event.published === true);
     const imageUrl = safeMediaUrl(event.metadata && event.metadata.image_url);
     existingEventImageUrl = imageUrl;
     if (imageUrl) setEventImagePreview(imageUrl, "Current event image");
@@ -230,6 +239,7 @@ function saveEventForm(event) {
   const location = $("#event-form-location").val().trim();
   const startsAt = $("#event-form-start").val();
   const endsAt = $("#event-form-end").val();
+  const published = $("#event-form-published").is(":checked");
   const image = $("#event-form-image")[0].files[0];
   $("#event-form-error").prop("hidden", true).text("");
 
@@ -255,6 +265,7 @@ function saveEventForm(event) {
   formData.append("location", location);
   formData.append("starts_at", startDate.toISOString());
   formData.append("ends_at", endDate.toISOString());
+  formData.append("published", String(published));
   if (image) formData.append("image", image);
 
   const isEditing = Boolean(editingEventId);
@@ -306,4 +317,27 @@ function deleteEvent(eventId) {
   }).catch((error) => {
     showToast(error.message, true);
   });
+}
+
+function toggleEventPublication(eventId, action) {
+  if (!isAdmin()) {
+    showToast("Only administrators can manage events.", true);
+    return;
+  }
+  const endpoint = action === "publish" ? "publish" : "unpublish";
+  apiRequest(`/api/events/${escapePathSegment(eventId)}/${endpoint}`, { method: "PATCH" })
+    .then((response) => {
+      if (!response.data) throw new Error("The API returned an unexpected event response.");
+      events = events.map((event) => event.id === eventId ? response.data : event);
+      eventsLoaded = true;
+      if (currentRoute === "event-detail" && currentEventId === eventId) {
+        loadEventDetail(eventId);
+      } else {
+        renderEvents();
+      }
+      showToast(response.message || `Event ${action === "publish" ? "published" : "unpublished"}.`);
+      loadNotifications();
+    }).catch((error) => {
+      showToast(error.message, true);
+    });
 }

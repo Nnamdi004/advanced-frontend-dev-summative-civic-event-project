@@ -103,8 +103,24 @@ function renderEventDetail(event) {
       .text("Edit event").appendTo($actions);
     $("<button>").attr({
       type: "button",
+      "data-event-toggle": event.id,
+      "data-publish-action": event.published === true ? "unpublish" : "publish",
+    }).addClass("announcement-publish-button")
+      .text(event.published === true ? "Unpublish" : "Publish")
+      .appendTo($actions);
+    $("<button>").attr({
+      type: "button",
       "data-delete-event": event.id,
     }).addClass("event-delete-button").text("Delete event").appendTo($actions);
+  }
+  if (isAdmin()) {
+    const $registrants = $("<section>").addClass("event-registrants")
+      .attr("aria-labelledby", "event-registrants-title")
+      .appendTo($body);
+    $("<h2>").attr("id", "event-registrants-title").addClass("font-display feedback-heading")
+      .text("Registered attendees").appendTo($registrants);
+    $("<div>").attr("id", "event-registrants-content").addClass("feedback-content")
+      .text("Loading registrants…").appendTo($registrants);
   }
   const $feedback = $("<section>").addClass("feedback-section")
     .attr("aria-labelledby", "event-feedback-title")
@@ -116,7 +132,31 @@ function renderEventDetail(event) {
     "aria-live": "polite",
   }).addClass("feedback-content").appendTo($feedback);
   $("#event-detail-content").prop("hidden", false);
+  if (isAdmin()) loadEventRegistrants(event.id);
   loadEventFeedback(event.id);
+}
+
+function loadEventRegistrants(eventId) {
+  apiRequest(`/api/event-registrations/event/${escapePathSegment(eventId)}/attendees`).then((response) => {
+    if (currentEventId !== eventId) return;
+    const registrants = Array.isArray(response.data) ? response.data : [];
+    const $content = $("#event-registrants-content").empty();
+    if (registrants.length === 0) {
+      $("<p>").addClass("feedback-empty-note").text("No one has registered yet.").appendTo($content);
+      return;
+    }
+    const $list = $("<ul>").addClass("event-registrants-list").appendTo($content);
+    registrants.forEach((registrant) => {
+      const $item = $("<li>").appendTo($list);
+      $("<strong>").text(registrant.full_name || "Unnamed user").appendTo($item);
+      if (registrant.email) $("<span>").text(` — ${registrant.email}`).appendTo($item);
+    });
+  }).catch((error) => {
+    if (currentEventId === eventId) {
+      $("#event-registrants-content").empty()
+        .append($("<p>").addClass("feedback-error").text(error.message));
+    }
+  });
 }
 
 function renderFeedbackLoading() {
@@ -129,9 +169,7 @@ function renderFeedbackLoading() {
 function loadEventFeedback(eventId) {
   renderFeedbackLoading();
   const ownFeedbackRequest = apiRequest("/api/event-feedback/my-feedback");
-  const allFeedbackRequest = isAdmin()
-    ? apiRequest(`/api/event-feedback/event/${escapePathSegment(eventId)}`)
-    : Promise.resolve(null);
+  const allFeedbackRequest = apiRequest(`/api/event-feedback/event/${escapePathSegment(eventId)}`);
 
   Promise.all([ownFeedbackRequest, allFeedbackRequest]).then(([ownResponse, allResponse]) => {
     if (currentEventId !== eventId) return;

@@ -185,3 +185,55 @@ function changeAdminUserStatus(userId, action) {
       showToast(error.message, true);
     });
 }
+
+function loadMyProfile() {
+  $("#profile-loading").prop("hidden", false);
+  $("#profile-form-error").prop("hidden", true).text("");
+  return apiRequest("/api/users/profile/me").then((response) => {
+    const user = response.data;
+    if (!user) throw new Error("The API returned an incomplete profile.");
+    $("#profile-full-name").val(user.full_name || "");
+    $("#profile-email").val(user.email || "");
+    $("#profile-readonly-role").text(user.role || "Member");
+    $("#profile-readonly-status").text(
+      user.is_active === false || user.is_active === 0 ? "Inactive" : "Active"
+    );
+    $("#profile-loading").prop("hidden", true);
+  }).catch((error) => {
+    $("#profile-loading").prop("hidden", true);
+    $("#profile-form-error").text(error.message).prop("hidden", false);
+  });
+}
+
+function saveMyProfile(event) {
+  event.preventDefault();
+  const fullName = $("#profile-full-name").val().trim();
+  const email = $("#profile-email").val().trim();
+  $("#profile-form-error").prop("hidden", true).text("");
+  if (!fullName || !email || !$("#profile-email")[0].checkValidity()) {
+    $("#profile-form-error").text("Enter your full name and a valid email address.").prop("hidden", false);
+    return;
+  }
+
+  const $button = $("#profile-form-submit");
+  $button.prop("disabled", true);
+  $button.find(".event-form-button-label").text("Saving…");
+  $button.find(".button-spinner").prop("hidden", false);
+  apiRequest("/api/users/profile/me", {
+    method: "PATCH",
+    body: { full_name: fullName, email },
+  }).then((response) => {
+    const user = response.data;
+    if (!user) throw new Error("The API returned an incomplete profile.");
+    authState.user = user;
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: authState.token, user }));
+    renderDashboard();
+    showToast(response.message || "Profile updated.");
+  }).catch((error) => {
+    $("#profile-form-error").text(error.message).prop("hidden", false);
+  }).finally(() => {
+    $button.prop("disabled", false);
+    $button.find(".event-form-button-label").text("Save profile");
+    $button.find(".button-spinner").prop("hidden", true);
+  });
+}
