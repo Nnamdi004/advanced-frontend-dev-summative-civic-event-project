@@ -3,8 +3,11 @@ import db from '../config/db.js';
 export const findAll = async (filters = {}) => {
     const { page = 1, limit = 20 } = filters;
     const offset = (page - 1) * limit;
+    const includeUnpublished = filters.includeUnpublished === true;
     const res = await db.query(
-        'SELECT * FROM announcements ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+        includeUnpublished
+            ? 'SELECT * FROM announcements ORDER BY created_at DESC LIMIT $1 OFFSET $2'
+            : 'SELECT * FROM announcements WHERE published = true ORDER BY created_at DESC LIMIT $1 OFFSET $2',
         [limit, offset]
     );
     return res.rows;

@@ -6,6 +6,7 @@ import * as Notifications from '../models/notifications.model.js';
 export const create = async (req, res, next) => {
     try {
         const { title, description, location, starts_at, ends_at } = req.body;
+        const published = req.body.published === undefined ? true : String(req.body.published) === 'true';
 
         // Base event data
         const eventData = {
@@ -14,6 +15,7 @@ export const create = async (req, res, next) => {
             location,
             starts_at,
             ends_at,
+            published,
             created_at: new Date(),
             updated_at: new Date(),
             metadata: {}
@@ -52,7 +54,9 @@ export const create = async (req, res, next) => {
 
 export const list = async (req, res, next) => {
     try {
-        const data = await Events.findAll(req.query);
+        const data = await Events.findAll({
+            includeUnpublished: req.user?.role === 'admin'
+        });
         return res.status(200).json({
             status: 200,
             message: 'Events fetched successfully',
@@ -71,6 +75,9 @@ export const get = async (req, res, next) => {
                 status: 404,
                 message: 'Event not found',
             });
+        if (req.user?.role !== 'admin' && event.published !== true) {
+            return res.status(404).json({ status: 404, message: 'Event not found' });
+        }
 
         return res.status(200).json({
             status: 200,
@@ -126,6 +133,9 @@ export const update = async (req, res, next) => {
             location: location ?? existingEvent.location,
             starts_at: starts_at ?? existingEvent.starts_at,
             ends_at: ends_at ?? existingEvent.ends_at,
+            published: req.body.published === undefined
+                ? existingEvent.published
+                : String(req.body.published) === 'true',
             metadata,
             updated_at: new Date(),
         };
@@ -164,6 +174,52 @@ export const remove = async (req, res, next) => {
             message: 'Event deleted successfully',
             data: { id, title: existingEvent.title },
         });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const publish = async (req, res, next) => {
+    try {
+        const existing = await Events.findById(req.params.id);
+        if (!existing) return res.status(404).json({ status: 404, message: 'Event not found' });
+        const event = await Events.update(req.params.id, {
+            title: existing.title,
+            description: existing.description,
+            location: existing.location,
+            starts_at: existing.starts_at,
+            ends_at: existing.ends_at,
+            published: true,
+            metadata: existing.metadata || {}
+        });
+        await Notifications.create({
+            title: 'Event Published',
+            message: `The event "${event.title}" is now live.`,
+            type: 'event',
+            recipient_id: null,
+            metadata: { event_id: event.id },
+            created_by: req.user?.id || null
+        });
+        return res.status(200).json({ status: 200, message: 'Event published successfully', data: event });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const unpublish = async (req, res, next) => {
+    try {
+        const existing = await Events.findById(req.params.id);
+        if (!existing) return res.status(404).json({ status: 404, message: 'Event not found' });
+        const event = await Events.update(req.params.id, {
+            title: existing.title,
+            description: existing.description,
+            location: existing.location,
+            starts_at: existing.starts_at,
+            ends_at: existing.ends_at,
+            published: false,
+            metadata: existing.metadata || {}
+        });
+        return res.status(200).json({ status: 200, message: 'Event unpublished successfully', data: event });
     } catch (err) {
         next(err);
     }

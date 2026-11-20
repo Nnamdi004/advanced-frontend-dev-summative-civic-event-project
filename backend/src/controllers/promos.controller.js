@@ -8,7 +8,11 @@ import * as PromoModel from '../models/promos.model.js';
 export const list = async (req, res, next) => {
     try {
         const { page = 1, limit = 20 } = req.query;
-        const result = await Promos.findAll({ page: Number(page), limit: Number(limit) });
+        const result = await Promos.findAll({
+            page: Number(page),
+            limit: Number(limit),
+            includeUnpublished: req.user?.role === 'admin'
+        });
         return res.status(200).json({
             status: 200,
             message: 'Promos fetched successfully',
@@ -27,6 +31,9 @@ export const get = async (req, res, next) => {
     try {
         const promo = await Promos.findById(req.params.id);
         if (!promo) {
+            return res.status(404).json({ status: 404, message: 'Promo not found' });
+        }
+        if (req.user?.role !== 'admin' && promo.published !== true) {
             return res.status(404).json({ status: 404, message: 'Promo not found' });
         }
         return res.status(200).json({ status: 200, data: promo });

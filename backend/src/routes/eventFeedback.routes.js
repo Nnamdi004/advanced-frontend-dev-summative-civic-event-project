@@ -10,6 +10,6 @@ router.put('/:id', authenticate, Controller.updateFeedback);
 router.get('/my-feedback', authenticate, Controller.getUserFeedback);
 
 // Admin route to view all feedback for an event
-router.get('/event/:event_id', authenticate, authorize(['admin']), Controller.getEventFeedback);
+router.get('/event/:event_id', authenticate, Controller.getEventFeedback);
 
 export default router;
